@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Richard Samuel — AI Engineer</title>
+  <meta name="description" content="AI Engineer building agentic AI systems and production ML infrastructure. Research in remote sensing restoration and adversarial robustness." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <canvas id="neural-canvas" aria-hidden="true"></canvas>
+
+  <header class="site-header" id="site-header">
+    <a href="#top" class="logo-mark">RS</a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="#publications">Publications</a>
+      <a href="#projects">Projects</a>
+      <a href="#building">Building</a>
+      <a href="#about">About</a>
+      <a href="#contact" class="nav-cta">Contact</a>
+    </nav>
+  </header>
+
+  <main id="top">
+
+    <!-- HERO — scroll-pinned cinematic sequence -->
+    <section class="hero" id="hero">
+      <div class="hero-stage">
+
+        <!-- Layer 0: location pill -->
+        <div class="hero-layer" id="hl-eyebrow">
+          <p class="hero-eyebrow mono">AI Engineer &nbsp;·&nbsp; Bangalore, India</p>
+        </div>
+
+        <!-- Layer 1: name -->
+        <div class="hero-layer" id="hl-name">
+          <h1 class="hero-name">
+            <span class="name-line" id="nl-richard" aria-hidden="true">Richard</span>
+            <span class="name-line" id="nl-samuel" aria-hidden="true">Samuel</span>
+            <span class="sr-only">Richard Samuel</span>
+          </h1>
+        </div>
+
+        <!-- Layer 2: tagline -->
+        <div class="hero-layer" id="hl-tagline">
+          <p class="hero-tagline">
+            Building agentic AI systems at <strong>MeshDefend</strong>.<br>
+            Published research in remote-sensing restoration<br>and adversarial robustness.
+          </p>
+        </div>
+
+        <!-- Layer 3: links -->
+        <div class="hero-layer" id="hl-links">
+          <div class="hero-links">
+            <a href="https://github.com/R1ch3rd" target="_blank" rel="noopener">GitHub</a>
+            <a href="https://www.linkedin.com/in/richard-samuel-d/" target="_blank" rel="noopener">LinkedIn</a>
+            <a href="#contact">Get in touch</a>
+          </div>
+          <p class="scroll-hint mono" aria-hidden="true">scroll to explore</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- PUBLICATIONS -->
+    <section class="publications content-section" id="publications">
+      <div class="section-inner">
+        <div class="section-head">
+          <h2 class="reveal-heading">Publications</h2>
+          <p class="section-sub reveal-sub">Remote sensing restoration and adversarial ML robustness, grounded in an ISRO/NRSC research internship.</p>
+        </div>
+
+        <ul class="citation-ledger">
+
+          <li class="citation reveal-item">
+            <span class="citation-status status-review mono">UNDER REVIEW</span>
+            <div class="citation-body">
+              <h3>Enhanced Multi-Scale Deep Image Prior for Unsupervised Remote Sensing Image Restoration</h3>
+              <p class="citation-meta mono">IEEE Geoscience and Remote Sensing Letters (GRSL) · Manuscript GRSL-01134-2026</p>
+              <p class="citation-desc">Unsupervised restoration of satellite imagery using a multi-scale deep image prior, removing the need for paired clean/corrupted training data. Developed during a research internship at ISRO/NRSC.</p>
+            </div>
+          </li>
+
+          <li class="citation reveal-item">
+            <span class="citation-status status-prep mono">NMITCON 2026</span>
+            <div class="citation-body">
+              <h3>FedHyperGNN: A Federated Hypergraph Neural Network for Privacy-Preserving Recommendations</h3>
+              <p class="citation-meta mono">IEEE NMITCON 2026</p>
+              <p class="citation-desc">A federated learning approach using hypergraph neural networks to model higher-order user-item relationships in recommendation systems, without centralizing user data.</p>
+            </div>
+          </li>
+
+          <li class="citation reveal-item">
+            <span class="citation-status status-award mono">BEST PAPER</span>
+            <div class="citation-body">
+              <h3>Reinforcement Learning–Based Adversarial Defense for Medical Imaging</h3>
+              <p class="citation-meta mono">Scopus-Indexed · PSG College of Technology</p>
+              <p class="citation-desc">A PPO-based reinforcement learning framework for defending medical imaging classifiers against adversarial perturbations.</p>
+            </div>
+          </li>
+
+          <li class="citation reveal-item">
+            <span class="citation-status status-pub mono">PUBLISHED</span>
+            <div class="citation-body">
+              <h3>ICCTSD</h3>
+              <p class="citation-meta mono">International Conference on Computational Techniques in Science and Defense</p>
+              <p class="citation-desc">Conference publication — details on request.</p>
+            </div>
+          </li>
+
+        </ul>
+      </div>
+    </section>
+
+    <!-- PROJECTS -->
+    <section class="projects content-section" id="projects">
+      <div class="section-inner">
+        <div class="section-head">
+          <h2 class="reveal-heading">Selected Projects</h2>
+          <p class="section-sub reveal-sub">Computer vision and applied ML, shipped end to end.</p>
+        </div>
+
+        <div class="project-grid">
+
+          <a class="project-card reveal-item" href="https://github.com/R1ch3rd/brain_tumor_yolov11" target="_blank" rel="noopener">
+            <div class="project-top">
+              <h3>brain_tumor_yolov11</h3>
+              <span class="project-arrow" aria-hidden="true">↗</span>
+            </div>
+            <p>Brain tumor detection on MRI scans using YOLOv11, tuned for localization accuracy on a medical imaging dataset.</p>
+            <div class="tag-row">
+              <span class="tag mono">YOLOv11</span>
+              <span class="tag mono">Computer Vision</span>
+              <span class="tag mono">Medical Imaging</span>
+            </div>
+          </a>
+
+          <a class="project-card reveal-item" href="https://github.com/VisionCrop" target="_blank" rel="noopener">
+            <div class="project-top">
+              <h3>VisionCrop</h3>
+              <span class="project-arrow" aria-hidden="true">↗</span>
+            </div>
+            <p>Deployment-focused computer vision system, built and shipped as a deployable service rather than a notebook experiment.</p>
+            <div class="tag-row">
+              <span class="tag mono">JavaScript</span>
+              <span class="tag mono">Deployment</span>
+              <span class="tag mono">Computer Vision</span>
+            </div>
+          </a>
+
+          <a class="project-card reveal-item" href="https://github.com/R1ch3rd/SoftIQo" target="_blank" rel="noopener">
+            <div class="project-top">
+              <h3>SoftIQo</h3>
+              <span class="project-arrow" aria-hidden="true">↗</span>
+            </div>
+            <p>Applied ML experimentation and modeling, built out in Jupyter as an iterative research-to-prototype workflow.</p>
+            <div class="tag-row">
+              <span class="tag mono">Python</span>
+              <span class="tag mono">ML</span>
+            </div>
+          </a>
+
+          <a class="project-card reveal-item" href="https://github.com/R1ch3rd/Polygotr" target="_blank" rel="noopener">
+            <div class="project-top">
+              <h3>Polygotr</h3>
+              <span class="project-arrow" aria-hidden="true">↗</span>
+            </div>
+            <p>In-progress project — actively building.</p>
+            <div class="tag-row">
+              <span class="tag mono">In Progress</span>
+            </div>
+          </a>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- CURRENTLY BUILDING -->
+    <section class="building content-section" id="building">
+      <div class="section-inner">
+        <div class="section-head">
+          <h2 class="reveal-heading">Currently Building</h2>
+        </div>
+        <div class="building-content">
+          <p class="reveal-item">
+            Migrating a unified LangGraph implementation into independently compiled
+            <strong>agent microservices</strong>, coordinated through shared Context and Memory MCP servers.
+            The architecture follows a plan-then-execute orchestration pattern, with human-in-the-loop
+            handled as a system-level state machine rather than a per-agent concern.
+          </p>
+          <p class="reveal-item">
+            Currently validating this with a single consolidated <strong>Intent Agent</strong> —
+            structured intent schema in, a rendered understanding card out — before expanding to the
+            full multi-agent workflow.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section class="about content-section" id="about">
+      <div class="section-inner">
+        <div class="section-head">
+          <h2 class="reveal-heading">About</h2>
+        </div>
+        <div class="about-content">
+          <p class="reveal-item">
+            AI Engineer at <strong>MeshDefend</strong>, an AI-powered IT services company for data
+            infrastructure — currently full-time, following a six-month internship there from
+            December to May.
+          </p>
+          <p class="reveal-item">
+            B.E. in Computer Science (AI &amp; ML specialization) from PSG College of Technology.
+            Research roots in satellite imagery restoration from an ISRO/NRSC internship, and
+            adversarial robustness work using reinforcement learning on medical imaging.
+          </p>
+          <p class="reveal-item">
+            Outside of work: tennis, and usually mid-way through something on the PS5.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section class="contact content-section" id="contact">
+      <div class="section-inner contact-inner">
+        <h2 class="reveal-heading contact-heading">Get in touch</h2>
+        <p class="contact-sub reveal-sub">Open to conversations on agentic AI systems, applied ML, and research collaboration.</p>
+        <div class="contact-links reveal-item">
+          <a href="mailto:richysamdom@gmail.com" class="contact-link mono">richysamdom@gmail.com</a>
+          <a href="https://github.com/R1ch3rd" target="_blank" rel="noopener" class="contact-link mono">github.com/R1ch3rd</a>
+          <a href="https://www.linkedin.com/in/richard-samuel-d/" target="_blank" rel="noopener" class="contact-link mono">linkedin.com/in/richard-samuel-d</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p class="mono">Richard Samuel &nbsp;·&nbsp; 2026</p>
+  </footer>
+
+  <!-- GSAP + ScrollTrigger + Lenis via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
