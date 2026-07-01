@@ -356,6 +356,18 @@ ul { margin: 0; padding: 0; list-style: none; }
   line-height: 1.6;
 }
 
+.citation-code {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--accent-bright);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease;
+}
+.citation-code:hover { border-bottom-color: var(--accent); }
+.citation-code:focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 3px; border-radius: 2px; }
+
 @media (max-width: 600px) {
   .citation { grid-template-columns: 1fr; gap: 10px; }
   .citation-status { width: fit-content; }
