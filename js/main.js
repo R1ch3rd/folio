@@ -34,9 +34,96 @@ function toast(msg) {
 }
 
 /* ============================================================
-   NEURAL NETWORK CANVAS (pointer-aware)
+   BOOT SEQUENCE — runs first, failsafe guaranteed
    ============================================================ */
-(function initCanvas() {
+function initBoot() {
+  const el = document.getElementById('boot');
+  const skip = document.documentElement.dataset.boot === 'skip';
+  let finished = false;
+
+  const done = () => {
+    if (finished) return;
+    finished = true;
+    document.body.classList.remove('no-scroll');
+    if (el && el.parentNode) {
+      el.classList.add('boot-out');
+      setTimeout(() => { if (el.parentNode) el.remove(); }, 430);
+    }
+    window.dispatchEvent(new Event('boot:done'));
+  };
+
+  if (!el || skip) {
+    if (el) el.remove();
+    requestAnimationFrame(() => {
+      if (!finished) { finished = true; window.dispatchEvent(new Event('boot:done')); }
+    });
+    return;
+  }
+
+  /* FAILSAFE: no matter what breaks, the overlay dies within 4.5s */
+  setTimeout(done, 4500);
+
+  document.body.classList.add('no-scroll');
+  try { sessionStorage.setItem('rs-booted', '1'); } catch (e) {}
+
+  const linesEl = el.querySelector('.boot-lines');
+  const bar = el.querySelector('.boot-bar-fill');
+  const timers = [];
+
+  const LINES = [
+    { text: 'RS://BOOT v3.0.0', dim: false },
+    { text: '> mounting /research ............... ok', dim: true },
+    { text: '> loading neural mesh (52 nodes) ... ok', dim: true },
+    { text: '> calibrating adversarial defenses . ok', dim: true },
+    { text: '> waking agents .................... ok', dim: true },
+    { text: '> tennis reflexes .................. ready', dim: true },
+    { text: 'ALL SYSTEMS NOMINAL', dim: false },
+  ];
+
+  function decode(div, text, duration) {
+    const start = performance.now();
+    const step = (now) => {
+      const p = Math.min(1, (now - start) / duration);
+      const reveal = Math.floor(p * text.length);
+      let out = text.slice(0, reveal);
+      for (let i = reveal; i < Math.min(text.length, reveal + 3); i++) {
+        out += SCRAMBLE_CHARS[(Math.random() * SCRAMBLE_CHARS.length) | 0];
+      }
+      div.textContent = out;
+      if (p < 1 && !finished) requestAnimationFrame(step);
+      else div.textContent = text;
+    };
+    requestAnimationFrame(step);
+  }
+
+  let t = 200;
+  LINES.forEach((ln, i) => {
+    timers.push(setTimeout(() => {
+      if (finished || !linesEl) return;
+      const div = document.createElement('div');
+      div.className = 'boot-line' + (ln.dim ? ' dim' : '');
+      linesEl.appendChild(div);
+      decode(div, ln.text, 220);
+      if (bar) bar.style.width = ((i + 1) / LINES.length) * 100 + '%';
+      if (i === LINES.length - 1) timers.push(setTimeout(done, 620));
+    }, t));
+    t += 175 + (i % 3) * 55;
+  });
+
+  const skipHandler = (e) => {
+    if (e.type === 'keydown' && e.key !== 'Escape') return;
+    window.removeEventListener('keydown', skipHandler);
+    timers.forEach(clearTimeout);
+    done();
+  };
+  window.addEventListener('keydown', skipHandler);
+  el.addEventListener('click', skipHandler);
+}
+
+/* ============================================================
+   NEURAL NETWORK CANVAS (pointer-aware, terracotta)
+   ============================================================ */
+function initCanvas() {
   const canvas = document.getElementById('neural-canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
@@ -45,8 +132,8 @@ function toast(msg) {
   const MAX_DIST   = 165;
   const CURSOR_DIST = 210;
   const SPEED      = prefersReducedMotion ? 0 : 0.26;
-  const LINE_RGB   = '91,140,126';
-  const NODE_RGB   = '127,181,164';
+  const LINE_RGB   = '217,119,87';   /* Claude orange */
+  const NODE_RGB   = '176,81,47';    /* deep terracotta */
 
   let W, H, nodes = [];
   let px = null, py = null;
@@ -74,7 +161,6 @@ function toast(msg) {
       n.x += n.vx; n.y += n.vy;
       if (n.x < 0 || n.x > W) n.vx *= -1;
       if (n.y < 0 || n.y > H) n.vy *= -1;
-      /* gentle pull toward cursor */
       if (px !== null && !prefersReducedMotion) {
         const dx = px - n.x, dy = py - n.y;
         const d = Math.hypot(dx, dy);
@@ -93,12 +179,11 @@ function toast(msg) {
           ctx.beginPath();
           ctx.moveTo(nodes[i].x, nodes[i].y);
           ctx.lineTo(nodes[j].x, nodes[j].y);
-          ctx.strokeStyle = `rgba(${LINE_RGB},${(1 - d / MAX_DIST) * 0.3})`;
+          ctx.strokeStyle = `rgba(${LINE_RGB},${(1 - d / MAX_DIST) * 0.32})`;
           ctx.lineWidth = 0.75;
           ctx.stroke();
         }
       }
-      /* cursor links, brighter */
       if (px !== null) {
         const dx = nodes[i].x - px, dy = nodes[i].y - py;
         const d = Math.sqrt(dx * dx + dy * dy);
@@ -106,7 +191,7 @@ function toast(msg) {
           ctx.beginPath();
           ctx.moveTo(nodes[i].x, nodes[i].y);
           ctx.lineTo(px, py);
-          ctx.strokeStyle = `rgba(${NODE_RGB},${(1 - d / CURSOR_DIST) * 0.5})`;
+          ctx.strokeStyle = `rgba(${NODE_RGB},${(1 - d / CURSOR_DIST) * 0.45})`;
           ctx.lineWidth = 0.9;
           ctx.stroke();
         }
@@ -116,7 +201,7 @@ function toast(msg) {
     for (const n of nodes) {
       ctx.beginPath();
       ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${NODE_RGB},0.5)`;
+      ctx.fillStyle = `rgba(${NODE_RGB},0.45)`;
       ctx.fill();
     }
 
@@ -127,12 +212,12 @@ function toast(msg) {
   resize();
   nodes = Array.from({ length: NODE_COUNT }, makeNode);
   tick();
-})();
+}
 
 /* ============================================================
    CUSTOM CURSOR
    ============================================================ */
-(function initCursor() {
+function initCursor() {
   if (!finePointer || prefersReducedMotion) return;
   const dot = document.querySelector('.cursor-dot');
   const ring = document.querySelector('.cursor-ring');
@@ -159,23 +244,23 @@ function toast(msg) {
     const hit = e.target.closest('a, button, input, .off-tile');
     ring.classList.toggle('big', !!hit);
   });
-})();
+}
 
 /* ============================================================
    HEADER SCROLL STATE
    ============================================================ */
-(function initHeader() {
+function initHeader() {
   const header = document.getElementById('site-header');
   if (!header) return;
   const update = () => header.classList.toggle('scrolled', window.scrollY > 60);
   window.addEventListener('scroll', update, { passive: true });
   update();
-})();
+}
 
 /* ============================================================
    SCROLL-SPY
    ============================================================ */
-(function initScrollSpy() {
+function initScrollSpy() {
   const sections = document.querySelectorAll('main section[id]');
   const links = document.querySelectorAll('.site-nav a[href^="#"]');
   if (!sections.length || !links.length) return;
@@ -188,29 +273,28 @@ function toast(msg) {
   }, { rootMargin: '-40% 0px -50% 0px' });
 
   sections.forEach((s) => obs.observe(s));
-})();
+}
 
 /* ============================================================
    NAV HOVER SCRAMBLE
    ============================================================ */
-(function initNavScramble() {
+function initNavScramble() {
   if (prefersReducedMotion) return;
   document.querySelectorAll('.site-nav a').forEach((link) => {
     const original = link.textContent;
     link.addEventListener('mouseenter', () => scrambleText(link, original, 320));
   });
-})();
+}
 
 /* ============================================================
    GSAP ANIMATIONS (waits for boot:done)
    ============================================================ */
-(function initAnimations() {
+function initAnimations() {
   if (prefersReducedMotion) return;
   if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
 
   gsap.registerPlugin(ScrollTrigger);
 
-  /* Lenis smooth scroll */
   if (typeof Lenis !== 'undefined') {
     const lenis = new Lenis({ lerp: 0.09, smoothWheel: true });
     lenis.on('scroll', ScrollTrigger.update);
@@ -219,7 +303,6 @@ function toast(msg) {
     window.__lenis = lenis;
   }
 
-  /* wrap hero name lines for masked reveal */
   document.querySelectorAll('.name-line').forEach((line) => {
     const inner = document.createElement('span');
     inner.className = 'name-line-inner';
@@ -250,22 +333,18 @@ function toast(msg) {
   let heroPlayed = false;
   const playHero = () => { if (!heroPlayed) { heroPlayed = true; heroIntro(); } };
   window.addEventListener('boot:done', playHero, { once: true });
-  /* safety: if boot event never fires, reveal after 4s */
-  setTimeout(playHero, 4000);
+  setTimeout(playHero, 5000); /* absolute fallback */
 
-  /* hero drifts and fades on scroll away */
   gsap.to('.hero-stage', {
     y: -70, opacity: 0.15, ease: 'none',
     scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: 1.4 },
   });
 
-  /* canvas dims past hero */
   gsap.to('#neural-canvas', {
-    opacity: 0.15, ease: 'none',
+    opacity: 0.14, ease: 'none',
     scrollTrigger: { trigger: '.hero', start: 'bottom 65%', end: 'bottom top', scrub: true },
   });
 
-  /* section reveals */
   document.querySelectorAll('.content-section').forEach((section) => {
     const heading = section.querySelector('.reveal-heading');
     const sub = section.querySelector('.reveal-sub');
@@ -286,12 +365,12 @@ function toast(msg) {
   });
 
   ScrollTrigger.refresh();
-})();
+}
 
 /* ============================================================
    RESTORATION DEMO
    ============================================================ */
-(function initDemo() {
+function initDemo() {
   const frame  = document.getElementById('demo-frame');
   const cClean = document.getElementById('demo-clean');
   const cNoisy = document.getElementById('demo-noisy');
@@ -351,9 +430,9 @@ function toast(msg) {
     const SCALE = 4.2;
     for (let y = 0; y < H; y++) {
       for (let x = 0; x < W; x++) {
-        const nx = (x / W) * SCALE, ny = (y / H) * SCALE * (H / W) * (W / H);
-        const h = noise(nx, ny * (H / W) + 2);
-        const hR = noise(nx + 0.02, ny * (H / W) + 2);
+        const nx = (x / W) * SCALE, ny = (y / H) * SCALE * 0.625;
+        const h = noise(nx, ny + 2);
+        const hR = noise(nx + 0.02, ny + 2);
         const shade = 0.82 + (h - hR) * 9;
         const [r, g, b] = terrainColor(h, Math.max(0.6, Math.min(1.2, shade)));
         const i = (y * W + x) * 4;
@@ -386,7 +465,7 @@ function toast(msg) {
 
     inputPSNR = computePSNR(clean, noisy);
 
-    /* "restored" = clean + faint residual noise (concept visualization) */
+    /* "restored" = clean + faint residual (concept visualization) */
     const rest = xClean.getImageData(0, 0, W, H);
     for (let i = 0; i < rest.data.length; i += 4) {
       const n = gauss() * 4.5;
@@ -423,7 +502,7 @@ function toast(msg) {
     setP(0);
     runBtn.disabled = false;
     runBtn.textContent = 'Run restoration';
-    psnrEl.textContent = inputPSNR.toFixed(1) + ' dB (input)';
+    if (psnrEl) psnrEl.textContent = inputPSNR.toFixed(1) + ' dB (input)';
   }
 
   slider.addEventListener('input', () => {
@@ -443,7 +522,7 @@ function toast(msg) {
     const finish = () => {
       restored = true; running = false;
       runBtn.textContent = 'Restored ✓ drag to compare';
-      psnrEl.textContent = outputPSNR.toFixed(1) + ' dB (+' + (outputPSNR - inputPSNR).toFixed(1) + ')';
+      if (psnrEl) psnrEl.textContent = outputPSNR.toFixed(1) + ' dB (+' + (outputPSNR - inputPSNR).toFixed(1) + ')';
     };
 
     if (typeof gsap !== 'undefined' && !prefersReducedMotion) {
@@ -451,7 +530,7 @@ function toast(msg) {
         v: 72, psnr: outputPSNR, duration: 1.8, ease: 'power2.inOut',
         onUpdate: () => {
           setP(state.v);
-          psnrEl.textContent = state.psnr.toFixed(1) + ' dB';
+          if (psnrEl) psnrEl.textContent = state.psnr.toFixed(1) + ' dB';
         },
         onComplete: finish,
       });
@@ -461,7 +540,7 @@ function toast(msg) {
     }
   });
 
-  seedBtn.addEventListener('click', () => {
+  if (seedBtn) seedBtn.addEventListener('click', () => {
     if (running) return;
     seed = Math.random() * 1000;
     renderScene();
@@ -470,12 +549,12 @@ function toast(msg) {
 
   renderScene();
   reset();
-})();
+}
 
 /* ============================================================
    COMMAND PALETTE
    ============================================================ */
-(function initPalette() {
+function initPalette() {
   const root = document.getElementById('palette');
   const input = document.getElementById('palette-input');
   const list = document.getElementById('palette-list');
@@ -491,6 +570,16 @@ function toast(msg) {
     else target.scrollIntoView({ behavior: 'smooth' });
   };
 
+  function copyEmail() {
+    close();
+    const email = 'richysamdom@gmail.com';
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(email).then(() => toast('email copied to clipboard'));
+    } else {
+      toast(email);
+    }
+  }
+
   const ITEMS = [
     { label: 'Go to Publications', hint: 'section', act: () => go('#publications') },
     { label: 'Go to Demo', hint: 'section', act: () => go('#demo') },
@@ -503,16 +592,6 @@ function toast(msg) {
     { label: 'Play tennis (pong)', hint: 'game', act: () => { close(); if (window.__openPong) window.__openPong(); } },
     { label: 'Replay boot sequence', hint: 'system', act: () => { try { sessionStorage.removeItem('rs-booted'); } catch (e) {} location.reload(); } },
   ];
-
-  function copyEmail() {
-    close();
-    const email = 'richysamdom@gmail.com';
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(email).then(() => toast('email copied to clipboard'));
-    } else {
-      toast(email);
-    }
-  }
 
   let filtered = ITEMS, active = 0, open = false;
 
@@ -574,15 +653,13 @@ function toast(msg) {
 
   if (chip) chip.addEventListener('click', openPalette);
   if (backdrop) backdrop.addEventListener('click', close);
-
-  /* mac users see ⌘K */
   if (chip && /mac/i.test(navigator.platform)) chip.textContent = '⌘K';
-})();
+}
 
 /* ============================================================
-   PONG — tennis edition
+   PONG — clay court edition
    ============================================================ */
-(function initPong() {
+function initPong() {
   const root = document.getElementById('pong');
   const canvas = document.getElementById('pong-canvas');
   if (!root || !canvas) return;
@@ -619,9 +696,10 @@ function toast(msg) {
   }
 
   function drawCourt() {
-    ctx.fillStyle = '#0E2A20';
+    /* clay court */
+    ctx.fillStyle = '#B85C35';
     ctx.fillRect(0, 0, W, H);
-    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.75)';
     ctx.lineWidth = 2;
     ctx.strokeRect(28, 28, W - 56, H - 56);
     ctx.setLineDash([12, 14]);
@@ -636,7 +714,6 @@ function toast(msg) {
     drawCourt();
 
     if (!gameOver) {
-      /* AI follows with capped speed */
       const target = ball.vx > 0 ? ball.y : H / 2;
       const diff = target - ai.y;
       ai.y += Math.max(-4.6, Math.min(4.6, diff * 0.08));
@@ -648,14 +725,12 @@ function toast(msg) {
 
       if (ball.y < 36 + ball.r || ball.y > H - 36 - ball.r) ball.vy *= -1;
 
-      /* player paddle */
       const px = 48;
       if (ball.vx < 0 && ball.x - ball.r < px + P.w && ball.x - ball.r > px &&
           Math.abs(ball.y - p1.y) < P.h / 2 + ball.r) {
         ball.vx = Math.min(14, -ball.vx * 1.06);
         ball.vy = ((ball.y - p1.y) / (P.h / 2)) * 5.5;
       }
-      /* ai paddle */
       const ax = W - 48 - P.w;
       if (ball.vx > 0 && ball.x + ball.r > ax && ball.x + ball.r < ax + P.w + 12 &&
           Math.abs(ball.y - ai.y) < P.h / 2 + ball.r) {
@@ -667,46 +742,41 @@ function toast(msg) {
       if (ball.x > W + 20) { score1++; checkWin(); if (!gameOver) serve(-1); }
     }
 
-    /* trail */
     trail.forEach((t, i) => {
       ctx.beginPath();
       ctx.arc(t.x, t.y, ball.r * (i / trail.length) * 0.8, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(217,237,76,${(i / trail.length) * 0.25})`;
+      ctx.fillStyle = `rgba(223,234,60,${(i / trail.length) * 0.3})`;
       ctx.fill();
     });
 
-    /* ball */
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
-    ctx.fillStyle = '#D9ED4C';
+    ctx.fillStyle = '#DFEA3C';
     ctx.fill();
-    /* tennis seam */
     ctx.beginPath();
     ctx.arc(ball.x - 2, ball.y, ball.r * 0.85, -0.9, 0.9);
-    ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)';
     ctx.lineWidth = 1.2;
     ctx.stroke();
 
-    /* paddles */
-    ctx.fillStyle = '#EAE8E3';
+    ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(48, p1.y - P.h / 2, P.w, P.h);
     ctx.fillRect(W - 48 - P.w, ai.y - P.h / 2, P.w, P.h);
 
-    /* score */
     ctx.font = '600 44px "JetBrains Mono", monospace';
     ctx.textAlign = 'center';
-    ctx.fillStyle = 'rgba(234,232,227,0.85)';
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
     ctx.fillText(score1, W / 2 - 70, 84);
     ctx.fillText(score2, W / 2 + 70, 84);
 
     if (gameOver) {
-      ctx.fillStyle = 'rgba(4,6,10,0.72)';
+      ctx.fillStyle = 'rgba(60,30,15,0.78)';
       ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = '#EAE8E3';
+      ctx.fillStyle = '#FFFFFF';
       ctx.font = '600 34px "JetBrains Mono", monospace';
       ctx.fillText(winner === 'you' ? 'GAME, SET, MATCH — YOU' : 'THE BOT TAKES IT', W / 2, H / 2 - 24);
       ctx.font = '400 15px "JetBrains Mono", monospace';
-      ctx.fillStyle = 'rgba(234,232,227,0.75)';
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
       if (winner === 'you') {
         ctx.fillText('beat the bot? mention "pong" when you email me. instant credibility.', W / 2, H / 2 + 18);
       } else {
@@ -766,15 +836,15 @@ function toast(msg) {
 
   const tile = document.getElementById('tile-tennis');
   if (tile) tile.addEventListener('click', openPong);
-})();
+}
 
 /* ============================================================
    LEGO BRICK BURST
    ============================================================ */
-(function initLego() {
+function initLego() {
   const tile = document.getElementById('tile-lego');
   if (!tile || prefersReducedMotion) return;
-  const COLORS = ['#D9453B', '#F2C14E', '#3E7CB1', '#5B8C7E', '#EAE8E3'];
+  const COLORS = ['#D9453B', '#F2C14E', '#3E7CB1', '#5B8C7E', '#D97757'];
 
   tile.addEventListener('click', () => {
     const rect = tile.getBoundingClientRect();
@@ -802,12 +872,12 @@ function toast(msg) {
       }
     }
   });
-})();
+}
 
 /* ============================================================
    MAGNETIC CONTACT BUTTON
    ============================================================ */
-(function initMagnet() {
+function initMagnet() {
   if (!finePointer || prefersReducedMotion) return;
   if (typeof gsap === 'undefined') return;
   const btn = document.getElementById('contact-magnet');
@@ -817,6 +887,7 @@ function toast(msg) {
   const yTo = gsap.quickTo(btn, 'y', { duration: 0.35, ease: 'power3.out' });
 
   const section = btn.closest('.contact');
+  if (!section) return;
   section.addEventListener('pointermove', (e) => {
     const r = btn.getBoundingClientRect();
     const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
@@ -826,109 +897,51 @@ function toast(msg) {
     else { xTo(0); yTo(0); }
   });
   section.addEventListener('pointerleave', () => { xTo(0); yTo(0); });
-})();
+}
 
 /* ============================================================
    FOOTER BOOT REPLAY
    ============================================================ */
-(function initFooterBoot() {
+function initFooterBoot() {
   const btn = document.getElementById('footer-boot');
   if (!btn) return;
   btn.addEventListener('click', () => {
     try { sessionStorage.removeItem('rs-booted'); } catch (e) {}
     location.reload();
   });
-})();
+}
 
 /* ============================================================
    CONSOLE EASTER EGG
    ============================================================ */
-console.log(
-  '%cRS %c// you opened the console. respect.\n%cif you want to talk agents, satellites, or pong strategy → richysamdom@gmail.com',
-  'font-size:28px;font-weight:700;color:#7FB5A4;',
-  'font-size:12px;color:#8A9199;',
-  'font-size:12px;color:#5B8C7E;'
-);
+function initConsole() {
+  console.log(
+    '%cRS %c// you opened the console. respect.\n%cif you want to talk agents, satellites, or pong strategy → richysamdom@gmail.com',
+    'font-size:28px;font-weight:700;color:#B0512F;',
+    'font-size:12px;color:#6B6759;',
+    'font-size:12px;color:#D97757;'
+  );
+}
 
 /* ============================================================
-   BOOT SEQUENCE (runs last; dispatches boot:done)
+   BOOTSTRAP — every module isolated; one failure
+   can never take down the page
    ============================================================ */
-(function initBoot() {
-  const el = document.getElementById('boot');
-  const skip = document.documentElement.dataset.boot === 'skip';
-  let dispatched = false;
+function safe(fn) {
+  try { fn(); } catch (e) { console.error('[init:' + fn.name + ']', e); }
+}
 
-  const fire = () => {
-    if (dispatched) return;
-    dispatched = true;
-    window.dispatchEvent(new Event('boot:done'));
-  };
-
-  if (!el || skip) {
-    if (el) el.remove();
-    requestAnimationFrame(fire);
-    return;
-  }
-
-  document.body.classList.add('no-scroll');
-  try { sessionStorage.setItem('rs-booted', '1'); } catch (e) {}
-
-  const linesEl = el.querySelector('.boot-lines');
-  const bar = el.querySelector('.boot-bar-fill');
-  const timers = [];
-
-  const LINES = [
-    { text: 'RS://BOOT v2.6.1', dim: false },
-    { text: '> mounting /research ............... ok', dim: true },
-    { text: '> loading neural mesh (52 nodes) ... ok', dim: true },
-    { text: '> calibrating adversarial defenses . ok', dim: true },
-    { text: '> waking agents .................... ok', dim: true },
-    { text: '> tennis reflexes .................. ready', dim: true },
-    { text: 'ALL SYSTEMS NOMINAL', dim: false },
-  ];
-
-  function decode(div, text, duration) {
-    const start = performance.now();
-    const step = (now) => {
-      const p = Math.min(1, (now - start) / duration);
-      const reveal = Math.floor(p * text.length);
-      let out = text.slice(0, reveal);
-      for (let i = reveal; i < Math.min(text.length, reveal + 3); i++) {
-        out += SCRAMBLE_CHARS[(Math.random() * SCRAMBLE_CHARS.length) | 0];
-      }
-      div.textContent = out;
-      if (p < 1) requestAnimationFrame(step);
-      else div.textContent = text;
-    };
-    requestAnimationFrame(step);
-  }
-
-  function done() {
-    timers.forEach(clearTimeout);
-    el.classList.add('boot-out');
-    document.body.classList.remove('no-scroll');
-    setTimeout(() => { el.remove(); fire(); }, 430);
-  }
-
-  let t = 200;
-  LINES.forEach((ln, i) => {
-    timers.push(setTimeout(() => {
-      const div = document.createElement('div');
-      div.className = 'boot-line' + (ln.dim ? ' dim' : '');
-      linesEl.appendChild(div);
-      decode(div, ln.text, 220);
-      bar.style.width = ((i + 1) / LINES.length) * 100 + '%';
-      if (i === LINES.length - 1) timers.push(setTimeout(done, 620));
-    }, t));
-    t += 175 + (i % 3) * 55;
-  });
-
-  const skipHandler = (e) => {
-    if (e.type === 'keydown' && e.key !== 'Escape') return;
-    window.removeEventListener('keydown', skipHandler);
-    el.removeEventListener('click', skipHandler);
-    done();
-  };
-  window.addEventListener('keydown', skipHandler);
-  el.addEventListener('click', skipHandler);
-})();
+safe(initBoot);      /* first: guarantees the overlay always clears */
+safe(initCanvas);
+safe(initCursor);
+safe(initHeader);
+safe(initScrollSpy);
+safe(initNavScramble);
+safe(initAnimations);
+safe(initDemo);
+safe(initPalette);
+safe(initPong);
+safe(initLego);
+safe(initMagnet);
+safe(initFooterBoot);
+safe(initConsole);
