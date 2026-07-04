@@ -1,23 +1,55 @@
 /* ============================================================
-   REDUCED MOTION CHECK
+   SHARED HELPERS
    ============================================================ */
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const finePointer = window.matchMedia('(pointer: fine)').matches;
+
+const SCRAMBLE_CHARS = '!<>-_\\/[]{}=+*^?#';
+
+function scrambleText(el, finalText, duration = 500) {
+  if (prefersReducedMotion) { el.textContent = finalText; return; }
+  cancelAnimationFrame(el._scr || 0);
+  const start = performance.now();
+  const step = (now) => {
+    const p = Math.min(1, (now - start) / duration);
+    const reveal = Math.floor(p * finalText.length);
+    let out = finalText.slice(0, reveal);
+    for (let i = reveal; i < finalText.length; i++) {
+      out += finalText[i] === ' ' ? ' ' : SCRAMBLE_CHARS[(Math.random() * SCRAMBLE_CHARS.length) | 0];
+    }
+    el.textContent = out;
+    if (p < 1) el._scr = requestAnimationFrame(step);
+    else el.textContent = finalText;
+  };
+  el._scr = requestAnimationFrame(step);
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('on');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('on'), 2200);
+}
 
 /* ============================================================
-   NEURAL NETWORK CANVAS
+   NEURAL NETWORK CANVAS (pointer-aware)
    ============================================================ */
 (function initCanvas() {
   const canvas = document.getElementById('neural-canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
 
-  const NODE_COUNT  = 52;
-  const MAX_DIST    = 165;
-  const NODE_SPEED  = prefersReducedMotion ? 0 : 0.26;
-  const LINE_RGB    = '91,140,126';
-  const NODE_RGB    = '127,181,164';
+  const NODE_COUNT = 52;
+  const MAX_DIST   = 165;
+  const CURSOR_DIST = 210;
+  const SPEED      = prefersReducedMotion ? 0 : 0.26;
+  const LINE_RGB   = '91,140,126';
+  const NODE_RGB   = '127,181,164';
 
   let W, H, nodes = [];
+  let px = null, py = null;
 
   function resize() {
     W = canvas.width  = window.innerWidth;
@@ -26,35 +58,56 @@ const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)
 
   function makeNode() {
     return {
-      x:  Math.random() * W,
-      y:  Math.random() * H,
-      vx: (Math.random() - 0.5) * NODE_SPEED,
-      vy: (Math.random() - 0.5) * NODE_SPEED,
-      r:  1.4 + Math.random() * 1.4,
+      x: Math.random() * W, y: Math.random() * H,
+      vx: (Math.random() - 0.5) * SPEED, vy: (Math.random() - 0.5) * SPEED,
+      r: 1.4 + Math.random() * 1.4,
     };
   }
+
+  window.addEventListener('pointermove', (e) => { px = e.clientX; py = e.clientY; }, { passive: true });
+  window.addEventListener('pointerleave', () => { px = py = null; }, { passive: true });
 
   function tick() {
     ctx.clearRect(0, 0, W, H);
 
     for (const n of nodes) {
-      n.x += n.vx;
-      n.y += n.vy;
+      n.x += n.vx; n.y += n.vy;
       if (n.x < 0 || n.x > W) n.vx *= -1;
       if (n.y < 0 || n.y > H) n.vy *= -1;
+      /* gentle pull toward cursor */
+      if (px !== null && !prefersReducedMotion) {
+        const dx = px - n.x, dy = py - n.y;
+        const d = Math.hypot(dx, dy);
+        if (d < CURSOR_DIST && d > 1) {
+          n.x += (dx / d) * 0.18;
+          n.y += (dy / d) * 0.18;
+        }
+      }
     }
 
     for (let i = 0; i < nodes.length; i++) {
       for (let j = i + 1; j < nodes.length; j++) {
-        const dx = nodes[i].x - nodes[j].x;
-        const dy = nodes[i].y - nodes[j].y;
-        const d  = Math.sqrt(dx * dx + dy * dy);
+        const dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
+        const d = Math.sqrt(dx * dx + dy * dy);
         if (d < MAX_DIST) {
           ctx.beginPath();
           ctx.moveTo(nodes[i].x, nodes[i].y);
           ctx.lineTo(nodes[j].x, nodes[j].y);
           ctx.strokeStyle = `rgba(${LINE_RGB},${(1 - d / MAX_DIST) * 0.3})`;
           ctx.lineWidth = 0.75;
+          ctx.stroke();
+        }
+      }
+      /* cursor links, brighter */
+      if (px !== null) {
+        const dx = nodes[i].x - px, dy = nodes[i].y - py;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        if (d < CURSOR_DIST) {
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          ctx.lineTo(px, py);
+          ctx.strokeStyle = `rgba(${NODE_RGB},${(1 - d / CURSOR_DIST) * 0.5})`;
+          ctx.lineWidth = 0.9;
           ctx.stroke();
         }
       }
@@ -77,6 +130,38 @@ const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)
 })();
 
 /* ============================================================
+   CUSTOM CURSOR
+   ============================================================ */
+(function initCursor() {
+  if (!finePointer || prefersReducedMotion) return;
+  const dot = document.querySelector('.cursor-dot');
+  const ring = document.querySelector('.cursor-ring');
+  if (!dot || !ring) return;
+
+  document.body.classList.add('has-cursor');
+  let x = -100, y = -100, rx = -100, ry = -100;
+
+  window.addEventListener('pointermove', (e) => {
+    x = e.clientX; y = e.clientY;
+    dot.style.left = x + 'px';
+    dot.style.top  = y + 'px';
+  }, { passive: true });
+
+  (function loop() {
+    rx += (x - rx) * 0.16;
+    ry += (y - ry) * 0.16;
+    ring.style.left = rx + 'px';
+    ring.style.top  = ry + 'px';
+    requestAnimationFrame(loop);
+  })();
+
+  document.addEventListener('mouseover', (e) => {
+    const hit = e.target.closest('a, button, input, .off-tile');
+    ring.classList.toggle('big', !!hit);
+  });
+})();
+
+/* ============================================================
    HEADER SCROLL STATE
    ============================================================ */
 (function initHeader() {
@@ -92,28 +177,32 @@ const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)
    ============================================================ */
 (function initScrollSpy() {
   const sections = document.querySelectorAll('main section[id]');
-  const links    = document.querySelectorAll('.site-nav a[href^="#"]');
+  const links = document.querySelectorAll('.site-nav a[href^="#"]');
   if (!sections.length || !links.length) return;
 
-  new IntersectionObserver(
-    (entries) => entries.forEach((e) => {
-      if (e.isIntersecting)
-        links.forEach((l) => l.classList.toggle('active', l.getAttribute('href') === `#${e.target.id}`));
-    }),
-    { rootMargin: '-40% 0px -50% 0px' }
-  ).observe(sections[0]) && sections.forEach((s) =>
-    new IntersectionObserver(
-      (entries) => entries.forEach((e) => {
-        if (e.isIntersecting)
-          links.forEach((l) => l.classList.toggle('active', l.getAttribute('href') === `#${e.target.id}`));
-      }),
-      { rootMargin: '-40% 0px -50% 0px' }
-    ).observe(s)
-  );
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (!e.isIntersecting) return;
+      links.forEach((l) => l.classList.toggle('active', l.getAttribute('href') === `#${e.target.id}`));
+    });
+  }, { rootMargin: '-40% 0px -50% 0px' });
+
+  sections.forEach((s) => obs.observe(s));
 })();
 
 /* ============================================================
-   ANIMATIONS — GSAP + ScrollTrigger + Lenis
+   NAV HOVER SCRAMBLE
+   ============================================================ */
+(function initNavScramble() {
+  if (prefersReducedMotion) return;
+  document.querySelectorAll('.site-nav a').forEach((link) => {
+    const original = link.textContent;
+    link.addEventListener('mouseenter', () => scrambleText(link, original, 320));
+  });
+})();
+
+/* ============================================================
+   GSAP ANIMATIONS (waits for boot:done)
    ============================================================ */
 (function initAnimations() {
   if (prefersReducedMotion) return;
@@ -121,17 +210,16 @@ const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)
 
   gsap.registerPlugin(ScrollTrigger);
 
-  /* ---- Lenis smooth scroll ---- */
+  /* Lenis smooth scroll */
   if (typeof Lenis !== 'undefined') {
     const lenis = new Lenis({ lerp: 0.09, smoothWheel: true });
     lenis.on('scroll', ScrollTrigger.update);
     gsap.ticker.add((t) => lenis.raf(t * 1000));
     gsap.ticker.lagSmoothing(0);
+    window.__lenis = lenis;
   }
 
-  /* ----------------------------------------------------------------
-     HERO — wrap name lines in clip container, set initial states
-     ---------------------------------------------------------------- */
+  /* wrap hero name lines for masked reveal */
   document.querySelectorAll('.name-line').forEach((line) => {
     const inner = document.createElement('span');
     inner.className = 'name-line-inner';
@@ -140,76 +228,707 @@ const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)
     line.appendChild(inner);
   });
 
-  /* set initial invisible states via GSAP (not CSS) so no-JS users see content */
-  gsap.set('.hero-eyebrow', { opacity: 0, y: 10 });
+  gsap.set('.hero-eyebrow',    { opacity: 0 });
   gsap.set('.name-line-inner', { y: '110%' });
-  gsap.set('.hero-tagline', { opacity: 0, y: 18 });
-  gsap.set('.hero-links',   { opacity: 0, y: 12 });
-  gsap.set('.scroll-hint',  { opacity: 0 });
+  gsap.set('.hero-tagline',    { opacity: 0, y: 18 });
+  gsap.set('.hero-links',      { opacity: 0, y: 12 });
+  gsap.set('.scroll-hint',     { opacity: 0 });
 
-  const heroTL = gsap.timeline({ defaults: { ease: 'power3.out' }, delay: 0.1 });
-  heroTL
-    .to('.hero-eyebrow',     { opacity: 1, y: 0,   duration: 0.75 })
-    .to('.name-line-inner',  { y: '0%',             duration: 1.0, stagger: 0.12, ease: 'power4.out' }, '-=0.4')
-    .to('.hero-tagline',     { opacity: 1, y: 0,   duration: 0.8 }, '-=0.55')
-    .to('.hero-links',       { opacity: 1, y: 0,   duration: 0.7 }, '-=0.55')
-    .to('.scroll-hint',      { opacity: 1,          duration: 0.6 }, '-=0.3');
+  function heroIntro() {
+    const eyebrow = document.getElementById('hero-eyebrow');
+    const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+    tl.to('.hero-eyebrow', {
+        opacity: 1, duration: 0.4,
+        onStart: () => { if (eyebrow) scrambleText(eyebrow, 'AI ENGINEER · BANGALORE, INDIA', 700); },
+      })
+      .to('.name-line-inner', { y: '0%', duration: 1.0, stagger: 0.12, ease: 'power4.out' }, '-=0.15')
+      .to('.hero-tagline', { opacity: 1, y: 0, duration: 0.8 }, '-=0.55')
+      .to('.hero-links',   { opacity: 1, y: 0, duration: 0.7 }, '-=0.55')
+      .to('.scroll-hint',  { opacity: 1, duration: 0.6 }, '-=0.3');
+  }
 
-  /* hero stage drifts up + fades as you scroll away */
+  let heroPlayed = false;
+  const playHero = () => { if (!heroPlayed) { heroPlayed = true; heroIntro(); } };
+  window.addEventListener('boot:done', playHero, { once: true });
+  /* safety: if boot event never fires, reveal after 4s */
+  setTimeout(playHero, 4000);
+
+  /* hero drifts and fades on scroll away */
   gsap.to('.hero-stage', {
     y: -70, opacity: 0.15, ease: 'none',
-    scrollTrigger: {
-      trigger: '.hero',
-      start: 'top top',
-      end: 'bottom top',
-      scrub: 1.4,
-    },
+    scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: 1.4 },
   });
 
-  /* canvas dims once you leave hero */
+  /* canvas dims past hero */
   gsap.to('#neural-canvas', {
     opacity: 0.15, ease: 'none',
-    scrollTrigger: {
-      trigger: '.hero',
-      start: 'bottom 65%',
-      end: 'bottom top',
-      scrub: true,
-    },
+    scrollTrigger: { trigger: '.hero', start: 'bottom 65%', end: 'bottom top', scrub: true },
   });
 
-  /* ----------------------------------------------------------------
-     SECTION REVEALS
-     Each section: heading wipes up, sub fades, items stagger up
-     ---------------------------------------------------------------- */
+  /* section reveals */
   document.querySelectorAll('.content-section').forEach((section) => {
     const heading = section.querySelector('.reveal-heading');
-    const sub     = section.querySelector('.reveal-sub');
-    const items   = section.querySelectorAll('.reveal-item');
+    const sub = section.querySelector('.reveal-sub');
+    const items = section.querySelectorAll('.reveal-item');
 
-    /* set initial states */
     if (heading) gsap.set(heading, { clipPath: 'inset(0 0 100% 0)' });
-    if (sub)     gsap.set(sub,     { opacity: 0, y: 12 });
+    if (sub) gsap.set(sub, { opacity: 0, y: 12 });
     if (items.length) gsap.set(items, { opacity: 0, y: 22 });
 
     const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: section,
-        start: 'top 82%',
-        toggleActions: 'play none none none',
-      },
+      scrollTrigger: { trigger: section, start: 'top 82%', toggleActions: 'play none none none' },
       defaults: { ease: 'power3.out' },
     });
 
     if (heading) tl.to(heading, { clipPath: 'inset(0 0 0% 0)', duration: 0.8 });
-    if (sub)     tl.to(sub,     { opacity: 1, y: 0, duration: 0.65 }, '-=0.4');
+    if (sub) tl.to(sub, { opacity: 1, y: 0, duration: 0.65 }, '-=0.4');
     if (items.length) tl.to(items, { opacity: 1, y: 0, duration: 0.6, stagger: 0.08 }, '-=0.3');
   });
 
-  /* project cards: subtle scale entrance */
-  gsap.from('.project-card', {
-    scale: 0.95, duration: 0.65, stagger: 0.08, ease: 'power2.out',
-    scrollTrigger: { trigger: '.project-grid', start: 'top 88%', toggleActions: 'play none none none' },
+  ScrollTrigger.refresh();
+})();
+
+/* ============================================================
+   RESTORATION DEMO
+   ============================================================ */
+(function initDemo() {
+  const frame  = document.getElementById('demo-frame');
+  const cClean = document.getElementById('demo-clean');
+  const cNoisy = document.getElementById('demo-noisy');
+  const slider = document.getElementById('demo-slider');
+  const runBtn = document.getElementById('demo-run');
+  const seedBtn = document.getElementById('demo-reseed');
+  const psnrEl = document.getElementById('demo-psnr-val');
+  if (!frame || !cClean || !cNoisy || !slider || !runBtn) return;
+
+  const W = 480, H = 300;
+  cClean.width = cNoisy.width = W;
+  cClean.height = cNoisy.height = H;
+  const xClean = cClean.getContext('2d');
+  const xNoisy = cNoisy.getContext('2d');
+
+  let seed = Math.random() * 1000;
+  let inputPSNR = 0, outputPSNR = 0;
+  let restored = false, running = false;
+
+  function makeNoiseFn(s) {
+    const rand = (x, y) => {
+      const v = Math.sin(x * 127.1 + y * 311.7 + s * 74.7) * 43758.5453;
+      return v - Math.floor(v);
+    };
+    const sm = (t) => t * t * (3 - 2 * t);
+    const n2 = (x, y) => {
+      const xi = Math.floor(x), yi = Math.floor(y);
+      const xf = x - xi, yf = y - yi;
+      const a = rand(xi, yi), b = rand(xi + 1, yi), c = rand(xi, yi + 1), d = rand(xi + 1, yi + 1);
+      const u = sm(xf), v = sm(yf);
+      return a * (1 - u) * (1 - v) + b * u * (1 - v) + c * (1 - u) * v + d * u * v;
+    };
+    return (x, y) => {
+      let amp = 1, f = 1, sum = 0, norm = 0;
+      for (let o = 0; o < 4; o++) { sum += n2(x * f, y * f) * amp; norm += amp; amp *= 0.5; f *= 2.1; }
+      return sum / norm;
+    };
+  }
+
+  function terrainColor(h, shade) {
+    let r, g, b;
+    if (h < 0.42)      { const t = h / 0.42;        r = 11 + t * 9;  g = 46 + t * 34;  b = 62 + t * 45; }
+    else if (h < 0.46) { r = 138; g = 123; b = 82; }
+    else if (h < 0.68) { const t = (h - 0.46) / 0.22; r = 34 + t * 28; g = 67 + t * 40;  b = 44 + t * 10; }
+    else if (h < 0.82) { r = 107; g = 90; b = 64; }
+    else               { r = 147; g = 135; b = 107; }
+    return [r * shade, g * shade, b * shade];
+  }
+
+  function gauss() {
+    return Math.sqrt(-2 * Math.log(1 - Math.random())) * Math.cos(2 * Math.PI * Math.random());
+  }
+
+  function renderScene() {
+    const noise = makeNoiseFn(seed);
+    const clean = xClean.createImageData(W, H);
+    const SCALE = 4.2;
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        const nx = (x / W) * SCALE, ny = (y / H) * SCALE * (H / W) * (W / H);
+        const h = noise(nx, ny * (H / W) + 2);
+        const hR = noise(nx + 0.02, ny * (H / W) + 2);
+        const shade = 0.82 + (h - hR) * 9;
+        const [r, g, b] = terrainColor(h, Math.max(0.6, Math.min(1.2, shade)));
+        const i = (y * W + x) * 4;
+        clean.data[i] = r; clean.data[i + 1] = g; clean.data[i + 2] = b; clean.data[i + 3] = 255;
+      }
+    }
+    xClean.putImageData(clean, 0, 0);
+
+    /* corrupted = clean + clouds + heavy gaussian noise */
+    xNoisy.putImageData(clean, 0, 0);
+    const rand = (n) => { const v = Math.sin(seed * 91.7 + n * 47.3) * 24634.63; return v - Math.floor(v); };
+    for (let c = 0; c < 3; c++) {
+      const cx = rand(c) * W, cy = rand(c + 10) * H, cr = 40 + rand(c + 20) * 70;
+      const grad = xNoisy.createRadialGradient(cx, cy, 0, cx, cy, cr);
+      grad.addColorStop(0, 'rgba(235,238,240,0.85)');
+      grad.addColorStop(0.6, 'rgba(225,230,235,0.45)');
+      grad.addColorStop(1, 'rgba(220,226,232,0)');
+      xNoisy.fillStyle = grad;
+      xNoisy.fillRect(cx - cr, cy - cr, cr * 2, cr * 2);
+    }
+    const noisy = xNoisy.getImageData(0, 0, W, H);
+    const SIGMA = 26;
+    for (let i = 0; i < noisy.data.length; i += 4) {
+      const n = gauss() * SIGMA;
+      noisy.data[i]     = Math.max(0, Math.min(255, noisy.data[i] + n));
+      noisy.data[i + 1] = Math.max(0, Math.min(255, noisy.data[i + 1] + n));
+      noisy.data[i + 2] = Math.max(0, Math.min(255, noisy.data[i + 2] + n));
+    }
+    xNoisy.putImageData(noisy, 0, 0);
+
+    inputPSNR = computePSNR(clean, noisy);
+
+    /* "restored" = clean + faint residual noise (concept visualization) */
+    const rest = xClean.getImageData(0, 0, W, H);
+    for (let i = 0; i < rest.data.length; i += 4) {
+      const n = gauss() * 4.5;
+      rest.data[i]     = Math.max(0, Math.min(255, rest.data[i] + n));
+      rest.data[i + 1] = Math.max(0, Math.min(255, rest.data[i + 1] + n));
+      rest.data[i + 2] = Math.max(0, Math.min(255, rest.data[i + 2] + n));
+    }
+    outputPSNR = computePSNR(clean, rest);
+    xClean.putImageData(rest, 0, 0);
+  }
+
+  function computePSNR(a, b) {
+    let mse = 0;
+    const len = a.data.length;
+    for (let i = 0; i < len; i += 4) {
+      for (let c = 0; c < 3; c++) {
+        const d = a.data[i + c] - b.data[i + c];
+        mse += d * d;
+      }
+    }
+    mse /= (len / 4) * 3;
+    return 10 * Math.log10((255 * 255) / mse);
+  }
+
+  function setP(v) {
+    frame.style.setProperty('--p', v);
+    cNoisy.style.clipPath = `inset(0 0 0 ${v}%)`;
+    slider.value = v;
+  }
+
+  function reset() {
+    restored = false; running = false;
+    frame.classList.remove('active', 'done');
+    setP(0);
+    runBtn.disabled = false;
+    runBtn.textContent = 'Run restoration';
+    psnrEl.textContent = inputPSNR.toFixed(1) + ' dB (input)';
+  }
+
+  slider.addEventListener('input', () => {
+    if (!restored) { slider.value = 0; return; }
+    frame.classList.add('active');
+    setP(parseFloat(slider.value));
   });
 
-  ScrollTrigger.refresh();
+  runBtn.addEventListener('click', () => {
+    if (running || restored) return;
+    running = true;
+    runBtn.disabled = true;
+    runBtn.textContent = 'Restoring…';
+    frame.classList.add('active', 'done');
+
+    const state = { v: 0, psnr: inputPSNR };
+    const finish = () => {
+      restored = true; running = false;
+      runBtn.textContent = 'Restored ✓ drag to compare';
+      psnrEl.textContent = outputPSNR.toFixed(1) + ' dB (+' + (outputPSNR - inputPSNR).toFixed(1) + ')';
+    };
+
+    if (typeof gsap !== 'undefined' && !prefersReducedMotion) {
+      gsap.to(state, {
+        v: 72, psnr: outputPSNR, duration: 1.8, ease: 'power2.inOut',
+        onUpdate: () => {
+          setP(state.v);
+          psnrEl.textContent = state.psnr.toFixed(1) + ' dB';
+        },
+        onComplete: finish,
+      });
+    } else {
+      setP(72);
+      finish();
+    }
+  });
+
+  seedBtn.addEventListener('click', () => {
+    if (running) return;
+    seed = Math.random() * 1000;
+    renderScene();
+    reset();
+  });
+
+  renderScene();
+  reset();
+})();
+
+/* ============================================================
+   COMMAND PALETTE
+   ============================================================ */
+(function initPalette() {
+  const root = document.getElementById('palette');
+  const input = document.getElementById('palette-input');
+  const list = document.getElementById('palette-list');
+  const chip = document.getElementById('palette-chip');
+  const backdrop = document.getElementById('palette-backdrop');
+  if (!root || !input || !list) return;
+
+  const go = (sel) => {
+    close();
+    const target = document.querySelector(sel);
+    if (!target) return;
+    if (window.__lenis) window.__lenis.scrollTo(target, { offset: -60 });
+    else target.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const ITEMS = [
+    { label: 'Go to Publications', hint: 'section', act: () => go('#publications') },
+    { label: 'Go to Demo', hint: 'section', act: () => go('#demo') },
+    { label: 'Go to Projects', hint: 'section', act: () => go('#projects') },
+    { label: 'Go to About', hint: 'section', act: () => go('#about') },
+    { label: 'Go to Contact', hint: 'section', act: () => go('#contact') },
+    { label: 'Open GitHub', hint: 'link', act: () => window.open('https://github.com/R1ch3rd', '_blank') },
+    { label: 'Open LinkedIn', hint: 'link', act: () => window.open('https://www.linkedin.com/in/richard-samuel-d/', '_blank') },
+    { label: 'Copy email address', hint: 'action', act: copyEmail },
+    { label: 'Play tennis (pong)', hint: 'game', act: () => { close(); if (window.__openPong) window.__openPong(); } },
+    { label: 'Replay boot sequence', hint: 'system', act: () => { try { sessionStorage.removeItem('rs-booted'); } catch (e) {} location.reload(); } },
+  ];
+
+  function copyEmail() {
+    close();
+    const email = 'richysamdom@gmail.com';
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(email).then(() => toast('email copied to clipboard'));
+    } else {
+      toast(email);
+    }
+  }
+
+  let filtered = ITEMS, active = 0, open = false;
+
+  function render() {
+    list.innerHTML = '';
+    filtered.forEach((item, i) => {
+      const li = document.createElement('li');
+      li.setAttribute('role', 'option');
+      li.className = i === active ? 'active' : '';
+      const label = document.createElement('span');
+      label.textContent = item.label;
+      const hint = document.createElement('span');
+      hint.className = 'hint';
+      hint.textContent = item.hint;
+      li.append(label, hint);
+      li.addEventListener('click', item.act);
+      li.addEventListener('mouseenter', () => { active = i; render(); });
+      list.appendChild(li);
+    });
+  }
+
+  function openPalette() {
+    if (open) return;
+    open = true;
+    root.hidden = false;
+    input.value = '';
+    filtered = ITEMS; active = 0;
+    render();
+    input.focus();
+    if (window.__lenis) window.__lenis.stop();
+  }
+
+  function close() {
+    if (!open) return;
+    open = false;
+    root.hidden = true;
+    if (window.__lenis) window.__lenis.start();
+  }
+
+  input.addEventListener('input', () => {
+    const q = input.value.toLowerCase().trim();
+    filtered = ITEMS.filter((i) => i.label.toLowerCase().includes(q));
+    active = 0;
+    render();
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      open ? close() : openPalette();
+      return;
+    }
+    if (!open) return;
+    if (e.key === 'Escape') { close(); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); active = (active + 1) % filtered.length; render(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); active = (active - 1 + filtered.length) % filtered.length; render(); }
+    else if (e.key === 'Enter' && filtered[active]) { filtered[active].act(); }
+  });
+
+  if (chip) chip.addEventListener('click', openPalette);
+  if (backdrop) backdrop.addEventListener('click', close);
+
+  /* mac users see ⌘K */
+  if (chip && /mac/i.test(navigator.platform)) chip.textContent = '⌘K';
+})();
+
+/* ============================================================
+   PONG — tennis edition
+   ============================================================ */
+(function initPong() {
+  const root = document.getElementById('pong');
+  const canvas = document.getElementById('pong-canvas');
+  if (!root || !canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  let raf = 0, open = false;
+  let W, H, dpr;
+  const P = { w: 12, h: 92 };
+  let p1, ai, ball, score1, score2, trail, gameOver, winner;
+
+  function resize() {
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function serve(dir) {
+    ball = {
+      x: W / 2, y: H / 2,
+      vx: 5.4 * dir,
+      vy: (Math.random() - 0.5) * 6,
+      r: 8,
+    };
+    trail = [];
+  }
+
+  function startGame() {
+    p1 = { y: H / 2 };
+    ai = { y: H / 2 };
+    score1 = 0; score2 = 0;
+    gameOver = false; winner = null;
+    serve(Math.random() > 0.5 ? 1 : -1);
+  }
+
+  function drawCourt() {
+    ctx.fillStyle = '#0E2A20';
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(28, 28, W - 56, H - 56);
+    ctx.setLineDash([12, 14]);
+    ctx.beginPath();
+    ctx.moveTo(W / 2, 28);
+    ctx.lineTo(W / 2, H - 28);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function loop() {
+    drawCourt();
+
+    if (!gameOver) {
+      /* AI follows with capped speed */
+      const target = ball.vx > 0 ? ball.y : H / 2;
+      const diff = target - ai.y;
+      ai.y += Math.max(-4.6, Math.min(4.6, diff * 0.08));
+
+      ball.x += ball.vx;
+      ball.y += ball.vy;
+      trail.push({ x: ball.x, y: ball.y });
+      if (trail.length > 10) trail.shift();
+
+      if (ball.y < 36 + ball.r || ball.y > H - 36 - ball.r) ball.vy *= -1;
+
+      /* player paddle */
+      const px = 48;
+      if (ball.vx < 0 && ball.x - ball.r < px + P.w && ball.x - ball.r > px &&
+          Math.abs(ball.y - p1.y) < P.h / 2 + ball.r) {
+        ball.vx = Math.min(14, -ball.vx * 1.06);
+        ball.vy = ((ball.y - p1.y) / (P.h / 2)) * 5.5;
+      }
+      /* ai paddle */
+      const ax = W - 48 - P.w;
+      if (ball.vx > 0 && ball.x + ball.r > ax && ball.x + ball.r < ax + P.w + 12 &&
+          Math.abs(ball.y - ai.y) < P.h / 2 + ball.r) {
+        ball.vx = Math.max(-14, -ball.vx * 1.06);
+        ball.vy = ((ball.y - ai.y) / (P.h / 2)) * 5.5;
+      }
+
+      if (ball.x < -20) { score2++; checkWin(); if (!gameOver) serve(1); }
+      if (ball.x > W + 20) { score1++; checkWin(); if (!gameOver) serve(-1); }
+    }
+
+    /* trail */
+    trail.forEach((t, i) => {
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, ball.r * (i / trail.length) * 0.8, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(217,237,76,${(i / trail.length) * 0.25})`;
+      ctx.fill();
+    });
+
+    /* ball */
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+    ctx.fillStyle = '#D9ED4C';
+    ctx.fill();
+    /* tennis seam */
+    ctx.beginPath();
+    ctx.arc(ball.x - 2, ball.y, ball.r * 0.85, -0.9, 0.9);
+    ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    /* paddles */
+    ctx.fillStyle = '#EAE8E3';
+    ctx.fillRect(48, p1.y - P.h / 2, P.w, P.h);
+    ctx.fillRect(W - 48 - P.w, ai.y - P.h / 2, P.w, P.h);
+
+    /* score */
+    ctx.font = '600 44px "JetBrains Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(234,232,227,0.85)';
+    ctx.fillText(score1, W / 2 - 70, 84);
+    ctx.fillText(score2, W / 2 + 70, 84);
+
+    if (gameOver) {
+      ctx.fillStyle = 'rgba(4,6,10,0.72)';
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#EAE8E3';
+      ctx.font = '600 34px "JetBrains Mono", monospace';
+      ctx.fillText(winner === 'you' ? 'GAME, SET, MATCH — YOU' : 'THE BOT TAKES IT', W / 2, H / 2 - 24);
+      ctx.font = '400 15px "JetBrains Mono", monospace';
+      ctx.fillStyle = 'rgba(234,232,227,0.75)';
+      if (winner === 'you') {
+        ctx.fillText('beat the bot? mention "pong" when you email me. instant credibility.', W / 2, H / 2 + 18);
+      } else {
+        ctx.fillText('the baseline bot shows no mercy. R for a rematch.', W / 2, H / 2 + 18);
+      }
+      ctx.fillText('R rematch · ESC exit', W / 2, H / 2 + 52);
+    }
+
+    raf = requestAnimationFrame(loop);
+  }
+
+  function checkWin() {
+    if (score1 >= 5) { gameOver = true; winner = 'you'; }
+    if (score2 >= 5) { gameOver = true; winner = 'bot'; }
+  }
+
+  function onMove(e) {
+    const y = e.touches ? e.touches[0].clientY : e.clientY;
+    p1.y = Math.max(36 + P.h / 2, Math.min(H - 36 - P.h / 2, y));
+    if (e.touches) e.preventDefault();
+  }
+
+  function onKey(e) {
+    if (e.key === 'Escape') closePong();
+    else if ((e.key === 'r' || e.key === 'R') && gameOver) startGame();
+  }
+
+  function openPong() {
+    if (open) return;
+    open = true;
+    root.hidden = false;
+    document.body.classList.add('no-scroll');
+    if (window.__lenis) window.__lenis.stop();
+    resize();
+    startGame();
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('resize', resize);
+    loop();
+  }
+
+  function closePong() {
+    if (!open) return;
+    open = false;
+    cancelAnimationFrame(raf);
+    root.hidden = true;
+    document.body.classList.remove('no-scroll');
+    if (window.__lenis) window.__lenis.start();
+    window.removeEventListener('mousemove', onMove);
+    window.removeEventListener('touchmove', onMove);
+    window.removeEventListener('keydown', onKey);
+    window.removeEventListener('resize', resize);
+  }
+
+  window.__openPong = openPong;
+
+  const tile = document.getElementById('tile-tennis');
+  if (tile) tile.addEventListener('click', openPong);
+})();
+
+/* ============================================================
+   LEGO BRICK BURST
+   ============================================================ */
+(function initLego() {
+  const tile = document.getElementById('tile-lego');
+  if (!tile || prefersReducedMotion) return;
+  const COLORS = ['#D9453B', '#F2C14E', '#3E7CB1', '#5B8C7E', '#EAE8E3'];
+
+  tile.addEventListener('click', () => {
+    const rect = tile.getBoundingClientRect();
+    for (let i = 0; i < 14; i++) {
+      const brick = document.createElement('span');
+      brick.className = 'lego-brick';
+      brick.style.background = COLORS[i % COLORS.length];
+      brick.style.left = (rect.width / 2) + 'px';
+      brick.style.top = (rect.height / 2) + 'px';
+      tile.appendChild(brick);
+
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 60 + Math.random() * 90;
+      const dx = Math.cos(angle) * dist;
+      const dy = Math.sin(angle) * dist - 40;
+
+      if (typeof gsap !== 'undefined') {
+        gsap.to(brick, {
+          x: dx, y: dy, rotation: (Math.random() - 0.5) * 540,
+          opacity: 0, duration: 0.9 + Math.random() * 0.5, ease: 'power2.out',
+          onComplete: () => brick.remove(),
+        });
+      } else {
+        setTimeout(() => brick.remove(), 600);
+      }
+    }
+  });
+})();
+
+/* ============================================================
+   MAGNETIC CONTACT BUTTON
+   ============================================================ */
+(function initMagnet() {
+  if (!finePointer || prefersReducedMotion) return;
+  if (typeof gsap === 'undefined') return;
+  const btn = document.getElementById('contact-magnet');
+  if (!btn) return;
+
+  const xTo = gsap.quickTo(btn, 'x', { duration: 0.35, ease: 'power3.out' });
+  const yTo = gsap.quickTo(btn, 'y', { duration: 0.35, ease: 'power3.out' });
+
+  const section = btn.closest('.contact');
+  section.addEventListener('pointermove', (e) => {
+    const r = btn.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const dx = e.clientX - cx, dy = e.clientY - cy;
+    const d = Math.hypot(dx, dy);
+    if (d < 160) { xTo(dx * 0.25); yTo(dy * 0.25); }
+    else { xTo(0); yTo(0); }
+  });
+  section.addEventListener('pointerleave', () => { xTo(0); yTo(0); });
+})();
+
+/* ============================================================
+   FOOTER BOOT REPLAY
+   ============================================================ */
+(function initFooterBoot() {
+  const btn = document.getElementById('footer-boot');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    try { sessionStorage.removeItem('rs-booted'); } catch (e) {}
+    location.reload();
+  });
+})();
+
+/* ============================================================
+   CONSOLE EASTER EGG
+   ============================================================ */
+console.log(
+  '%cRS %c// you opened the console. respect.\n%cif you want to talk agents, satellites, or pong strategy → richysamdom@gmail.com',
+  'font-size:28px;font-weight:700;color:#7FB5A4;',
+  'font-size:12px;color:#8A9199;',
+  'font-size:12px;color:#5B8C7E;'
+);
+
+/* ============================================================
+   BOOT SEQUENCE (runs last; dispatches boot:done)
+   ============================================================ */
+(function initBoot() {
+  const el = document.getElementById('boot');
+  const skip = document.documentElement.dataset.boot === 'skip';
+  let dispatched = false;
+
+  const fire = () => {
+    if (dispatched) return;
+    dispatched = true;
+    window.dispatchEvent(new Event('boot:done'));
+  };
+
+  if (!el || skip) {
+    if (el) el.remove();
+    requestAnimationFrame(fire);
+    return;
+  }
+
+  document.body.classList.add('no-scroll');
+  try { sessionStorage.setItem('rs-booted', '1'); } catch (e) {}
+
+  const linesEl = el.querySelector('.boot-lines');
+  const bar = el.querySelector('.boot-bar-fill');
+  const timers = [];
+
+  const LINES = [
+    { text: 'RS://BOOT v2.6.1', dim: false },
+    { text: '> mounting /research ............... ok', dim: true },
+    { text: '> loading neural mesh (52 nodes) ... ok', dim: true },
+    { text: '> calibrating adversarial defenses . ok', dim: true },
+    { text: '> waking agents .................... ok', dim: true },
+    { text: '> tennis reflexes .................. ready', dim: true },
+    { text: 'ALL SYSTEMS NOMINAL', dim: false },
+  ];
+
+  function decode(div, text, duration) {
+    const start = performance.now();
+    const step = (now) => {
+      const p = Math.min(1, (now - start) / duration);
+      const reveal = Math.floor(p * text.length);
+      let out = text.slice(0, reveal);
+      for (let i = reveal; i < Math.min(text.length, reveal + 3); i++) {
+        out += SCRAMBLE_CHARS[(Math.random() * SCRAMBLE_CHARS.length) | 0];
+      }
+      div.textContent = out;
+      if (p < 1) requestAnimationFrame(step);
+      else div.textContent = text;
+    };
+    requestAnimationFrame(step);
+  }
+
+  function done() {
+    timers.forEach(clearTimeout);
+    el.classList.add('boot-out');
+    document.body.classList.remove('no-scroll');
+    setTimeout(() => { el.remove(); fire(); }, 430);
+  }
+
+  let t = 200;
+  LINES.forEach((ln, i) => {
+    timers.push(setTimeout(() => {
+      const div = document.createElement('div');
+      div.className = 'boot-line' + (ln.dim ? ' dim' : '');
+      linesEl.appendChild(div);
+      decode(div, ln.text, 220);
+      bar.style.width = ((i + 1) / LINES.length) * 100 + '%';
+      if (i === LINES.length - 1) timers.push(setTimeout(done, 620));
+    }, t));
+    t += 175 + (i % 3) * 55;
+  });
+
+  const skipHandler = (e) => {
+    if (e.type === 'keydown' && e.key !== 'Escape') return;
+    window.removeEventListener('keydown', skipHandler);
+    el.removeEventListener('click', skipHandler);
+    done();
+  };
+  window.addEventListener('keydown', skipHandler);
+  el.addEventListener('click', skipHandler);
 })();

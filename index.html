@@ -5,6 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Richard Samuel — AI Engineer</title>
   <meta name="description" content="AI Engineer building agentic AI systems and production ML infrastructure. Research in remote sensing restoration and adversarial robustness." />
+  <meta property="og:title" content="Richard Samuel — AI Engineer" />
+  <meta property="og:description" content="Agentic AI systems, published research, and a portfolio that boots like a robot OS." />
+  <meta property="og:url" content="https://r1ch3rd.github.io/folio/" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23080A0D'/%3E%3Ctext x='32' y='43' font-family='monospace' font-size='26' fill='%237FB5A4' text-anchor='middle'%3ERS%3C/text%3E%3C/svg%3E" />
+
+  <script>
+    /* decide boot-skip before first paint */
+    try {
+      if (sessionStorage.getItem('rs-booted') || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.documentElement.dataset.boot = 'skip';
+      }
+    } catch (e) { document.documentElement.dataset.boot = 'skip'; }
+  </script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,49 +27,54 @@
 </head>
 <body>
 
+  <!-- BOOT SEQUENCE OVERLAY -->
+  <div id="boot" aria-hidden="true">
+    <div class="boot-inner">
+      <div class="boot-lines mono"></div>
+      <div class="boot-bar"><div class="boot-bar-fill"></div></div>
+      <p class="boot-skip mono">ESC to skip</p>
+    </div>
+  </div>
+
+  <!-- custom cursor -->
+  <div class="cursor-dot" aria-hidden="true"></div>
+  <div class="cursor-ring" aria-hidden="true"></div>
+
   <canvas id="neural-canvas" aria-hidden="true"></canvas>
 
   <header class="site-header" id="site-header">
     <a href="#top" class="logo-mark">RS</a>
     <nav class="site-nav" aria-label="Primary">
       <a href="#publications">Publications</a>
+      <a href="#demo">Demo</a>
       <a href="#projects">Projects</a>
-      <a href="#building">Building</a>
       <a href="#about">About</a>
       <a href="#contact" class="nav-cta">Contact</a>
     </nav>
+    <button class="palette-chip mono" id="palette-chip" aria-label="Open command palette">Ctrl K</button>
   </header>
 
   <main id="top">
 
-    <!-- HERO — scroll-pinned cinematic sequence -->
+    <!-- HERO -->
     <section class="hero" id="hero">
       <div class="hero-stage">
-
-        <!-- Layer 0: location pill -->
-        <div class="hero-layer" id="hl-eyebrow">
-          <p class="hero-eyebrow mono">AI Engineer &nbsp;·&nbsp; Bangalore, India</p>
+        <div class="hero-layer">
+          <p class="hero-eyebrow mono" id="hero-eyebrow">AI ENGINEER · BANGALORE, INDIA</p>
         </div>
-
-        <!-- Layer 1: name -->
-        <div class="hero-layer" id="hl-name">
+        <div class="hero-layer">
           <h1 class="hero-name">
-            <span class="name-line" id="nl-richard" aria-hidden="true">Richard</span>
-            <span class="name-line" id="nl-samuel" aria-hidden="true">Samuel</span>
-            <span class="sr-only">Richard Samuel</span>
+            <span class="name-line">Richard</span>
+            <span class="name-line">Samuel</span>
           </h1>
         </div>
-
-        <!-- Layer 2: tagline -->
-        <div class="hero-layer" id="hl-tagline">
+        <div class="hero-layer">
           <p class="hero-tagline">
             Building agentic AI systems at <strong>MeshDefend</strong>.<br>
             Published research in remote-sensing restoration<br>and adversarial robustness.
           </p>
         </div>
-
-        <!-- Layer 3: links -->
-        <div class="hero-layer" id="hl-links">
+        <div class="hero-layer">
           <div class="hero-links">
             <a href="https://github.com/R1ch3rd" target="_blank" rel="noopener">GitHub</a>
             <a href="https://www.linkedin.com/in/richard-samuel-d/" target="_blank" rel="noopener">LinkedIn</a>
@@ -64,9 +82,16 @@
           </div>
           <p class="scroll-hint mono" aria-hidden="true">scroll to explore</p>
         </div>
-
       </div>
     </section>
+
+    <!-- MARQUEE -->
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-track mono">
+        <span>AGENTIC SYSTEMS ✦ REMOTE SENSING ✦ ADVERSARIAL ROBUSTNESS ✦ FEDERATED LEARNING ✦ SHIPPED, NOT SLIDES ✦&nbsp;</span>
+        <span>AGENTIC SYSTEMS ✦ REMOTE SENSING ✦ ADVERSARIAL ROBUSTNESS ✦ FEDERATED LEARNING ✦ SHIPPED, NOT SLIDES ✦&nbsp;</span>
+      </div>
+    </div>
 
     <!-- PUBLICATIONS -->
     <section class="publications content-section" id="publications">
@@ -113,11 +138,37 @@
             <div class="citation-body">
               <h3>ICCTSD</h3>
               <p class="citation-meta mono">International Conference on Computational Techniques in Science and Defense</p>
-              <p class="citation-desc">Conference publication — details on request.</p>
+              <p class="citation-desc">Conference publication. Details on request.</p>
             </div>
           </li>
 
         </ul>
+      </div>
+    </section>
+
+    <!-- INTERACTIVE DEMO -->
+    <section class="demo content-section" id="demo">
+      <div class="section-inner">
+        <div class="section-head">
+          <h2 class="reveal-heading">Research, touchable</h2>
+          <p class="section-sub reveal-sub">A conceptual, in-browser visualization of my GRSL work: unsupervised restoration of corrupted satellite imagery. Procedurally generated scene, real PSNR math, zero servers.</p>
+        </div>
+
+        <div class="demo-stage reveal-item">
+          <div class="demo-frame" id="demo-frame">
+            <canvas id="demo-clean"></canvas>
+            <canvas id="demo-noisy"></canvas>
+            <div class="demo-divider" id="demo-divider"></div>
+            <input type="range" id="demo-slider" min="0" max="100" step="0.5" value="0" aria-label="Compare corrupted and restored imagery" />
+            <span class="demo-tag demo-tag-l mono" id="demo-tag-l">RESTORED</span>
+            <span class="demo-tag demo-tag-r mono" id="demo-tag-r">CORRUPTED</span>
+          </div>
+          <div class="demo-controls">
+            <button id="demo-run" class="btn-primary">Run restoration</button>
+            <button id="demo-reseed" class="btn-ghost">New scene</button>
+            <p class="demo-psnr mono">PSNR&nbsp;<span id="demo-psnr-val">—</span></p>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -131,7 +182,7 @@
 
         <div class="project-grid">
 
-          <a class="project-card reveal-item" href="https://github.com/R1ch3rd/ReZero" target="_blank" rel="noopener">
+          <a class="project-card featured reveal-item" href="https://github.com/R1ch3rd/ReZero" target="_blank" rel="noopener">
             <div class="project-top">
               <h3>Misinformation Detection Agent</h3>
               <span class="project-arrow" aria-hidden="true">↗</span>
@@ -154,7 +205,6 @@
             <div class="tag-row">
               <span class="tag mono">FastAPI</span>
               <span class="tag mono">Docker</span>
-              <span class="tag mono">PostgreSQL</span>
               <span class="tag mono">Deployed</span>
             </div>
           </a>
@@ -164,7 +214,7 @@
               <h3>Polygotr</h3>
               <span class="project-arrow" aria-hidden="true">↗</span>
             </div>
-            <p>Multi-language translation API — translate text into several languages at once, persisted in PostgreSQL, powered by the Gemini API. FastAPI backend.</p>
+            <p>Multi-language translation API: translate text into several languages at once, persisted in PostgreSQL, powered by the Gemini API.</p>
             <div class="tag-row">
               <span class="tag mono">FastAPI</span>
               <span class="tag mono">PostgreSQL</span>
@@ -190,8 +240,8 @@
             handled as a system-level state machine rather than a per-agent concern.
           </p>
           <p class="reveal-item">
-            Currently validating this with a single consolidated <strong>Intent Agent</strong> —
-            structured intent schema in, a rendered understanding card out — before expanding to the
+            Currently validating this with a single consolidated <strong>Intent Agent</strong>:
+            structured intent schema in, a rendered understanding card out, before expanding to the
             full multi-agent workflow.
           </p>
         </div>
@@ -207,7 +257,7 @@
         <div class="about-content">
           <p class="reveal-item">
             AI Engineer at <strong>MeshDefend</strong>, an AI-powered IT services company for data
-            infrastructure — currently full-time, following a six-month internship there from
+            infrastructure. Currently full-time, following a six-month internship there from
             December to May.
           </p>
           <p class="reveal-item">
@@ -215,9 +265,39 @@
             Research roots in satellite imagery restoration from an ISRO/NRSC internship, and
             adversarial robustness work using reinforcement learning on medical imaging.
           </p>
-          <p class="reveal-item">
-            Outside of work: tennis, and usually mid-way through something on the PS5.
-          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- OFF THE CLOCK -->
+    <section class="offclock content-section" id="offclock">
+      <div class="section-inner">
+        <div class="section-head">
+          <h2 class="reveal-heading">Off the clock</h2>
+          <p class="section-sub reveal-sub">The parts that don't fit on a resume.</p>
+        </div>
+
+        <div class="off-grid">
+          <button class="off-tile off-tennis reveal-item" id="tile-tennis" type="button">
+            <span class="off-emoji" aria-hidden="true">🎾</span>
+            <span class="off-title">Tennis</span>
+            <span class="off-sub">Click for a rally. The bot plays a mean baseline game.</span>
+          </button>
+          <div class="off-tile reveal-item">
+            <span class="off-emoji" aria-hidden="true">🎮</span>
+            <span class="off-title">Video games</span>
+            <span class="off-sub">Usually mid-way through something on the PS5.</span>
+          </div>
+          <button class="off-tile off-lego reveal-item" id="tile-lego" type="button">
+            <span class="off-emoji" aria-hidden="true">🧱</span>
+            <span class="off-title">LEGO</span>
+            <span class="off-sub">Click it. Everything is modular if you try hard enough.</span>
+          </button>
+          <div class="off-tile reveal-item">
+            <span class="off-emoji" aria-hidden="true">🤖</span>
+            <span class="off-title">Robotics</span>
+            <span class="off-sub">Agents with bodies. The long-term obsession.</span>
+          </div>
         </div>
       </div>
     </section>
@@ -227,6 +307,7 @@
       <div class="section-inner contact-inner">
         <h2 class="reveal-heading contact-heading">Get in touch</h2>
         <p class="contact-sub reveal-sub">Open to conversations on agentic AI systems, applied ML, and research collaboration.</p>
+        <a class="btn-magnet reveal-item" id="contact-magnet" href="mailto:richysamdom@gmail.com">Start a conversation</a>
         <div class="contact-links reveal-item">
           <a href="mailto:richysamdom@gmail.com" class="contact-link mono">richysamdom@gmail.com</a>
           <a href="https://github.com/R1ch3rd" target="_blank" rel="noopener" class="contact-link mono">github.com/R1ch3rd</a>
@@ -238,10 +319,28 @@
   </main>
 
   <footer class="site-footer">
-    <p class="mono">Richard Samuel &nbsp;·&nbsp; 2026</p>
+    <p class="mono">Richard Samuel · 2026 · <button class="footer-boot mono" id="footer-boot" type="button">replay boot</button></p>
   </footer>
 
-  <!-- GSAP + ScrollTrigger + Lenis via CDN -->
+  <!-- COMMAND PALETTE -->
+  <div class="palette" id="palette" role="dialog" aria-modal="true" aria-label="Command palette" hidden>
+    <div class="palette-backdrop" id="palette-backdrop"></div>
+    <div class="palette-panel">
+      <input type="text" class="palette-input mono" id="palette-input" placeholder="Type a command…" autocomplete="off" spellcheck="false" />
+      <ul class="palette-list" id="palette-list" role="listbox"></ul>
+      <p class="palette-hint mono">↑↓ navigate · ↵ run · esc close</p>
+    </div>
+  </div>
+
+  <!-- PONG -->
+  <div class="pong" id="pong" role="dialog" aria-modal="true" aria-label="Tennis pong game" hidden>
+    <canvas id="pong-canvas"></canvas>
+    <p class="pong-hint mono">move: mouse / touch · first to 5 · ESC to quit</p>
+  </div>
+
+  <!-- toast -->
+  <div class="toast mono" id="toast" role="status" aria-live="polite"></div>
+
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
