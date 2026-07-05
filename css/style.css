@@ -171,7 +171,7 @@ body.has-cursor .cursor-dot, body.has-cursor .cursor-ring { opacity: 1; }
   inset: 0;
   z-index: var(--z-canvas);
   pointer-events: none;
-  opacity: 0.5;
+  opacity: 0.62;
 }
 
 /* ============================================================
@@ -646,9 +646,8 @@ body.has-cursor .cursor-dot, body.has-cursor .cursor-ring { opacity: 1; }
 }
 
 /* ============================================================
-   BUILDING / ABOUT
+   ABOUT
    ============================================================ */
-.building-content p,
 .about-content p {
   font-size: 16px;
   color: var(--text-muted);
@@ -656,41 +655,71 @@ body.has-cursor .cursor-dot, body.has-cursor .cursor-ring { opacity: 1; }
   margin: 0 0 20px;
   line-height: 1.75;
 }
-.building-content p:last-child,
 .about-content p:last-child { margin-bottom: 0; }
-.building-content strong,
 .about-content strong { color: var(--ink); font-weight: 600; }
 
 /* ============================================================
-   OFF THE CLOCK
+   OFF THE CLOCK — ledger list, matches publications rhythm
    ============================================================ */
-.off-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-}
-
-.off-tile {
-  flex: 1 1 200px;
-  min-width: 200px;
-  text-align: left;
-  background: var(--surface);
-  border: 1px solid var(--surface-border);
-  border-radius: 10px;
-  padding: 22px;
+.off-ledger {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  position: relative;
-  overflow: visible;
-  transition: border-color 0.25s ease, transform 0.25s ease;
 }
-button.off-tile { cursor: pointer; }
-.off-tile:hover { border-color: var(--accent); transform: translateY(-3px); }
 
-.off-emoji { font-size: 26px; line-height: 1; }
-.off-title { font-weight: 600; font-size: 15.5px; color: var(--ink); margin-top: 6px; }
-.off-sub { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+.off-entry {
+  border-top: 1px solid var(--surface-border);
+}
+.off-entry:last-child {
+  border-bottom: 1px solid var(--surface-border);
+}
+
+.off-entry-inner {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  padding: 22px 4px;
+  box-sizing: border-box;
+  background: none;
+  border: none;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  position: relative;
+}
+
+button.off-entry-inner {
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+}
+button.off-entry-inner:hover,
+button.off-entry-inner:focus-visible {
+  background: var(--surface-warm);
+}
+
+.off-tag {
+  position: relative;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  padding: 6px 10px;
+  border-radius: 3px;
+  font-weight: 600;
+  justify-self: start;
+  white-space: nowrap;
+}
+.off-tag-sage   { background: var(--sage-dim);   color: var(--sage); }
+.off-tag-butter { background: var(--butter-dim); color: var(--butter-ink); }
+.off-tag-blush  { background: var(--blush-dim);  color: var(--blush-ink); }
+.off-tag-accent { background: var(--accent-dim); color: var(--accent-deep); }
+
+.off-body { display: flex; flex-direction: column; }
+.off-desc { font-size: 14.5px; color: var(--text-muted); line-height: 1.55; }
+
+@media (max-width: 600px) {
+  .off-entry-inner { grid-template-columns: 84px 1fr; gap: 16px; }
+}
 
 .lego-brick {
   position: absolute;

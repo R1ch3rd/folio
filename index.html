@@ -227,28 +227,6 @@
       </div>
     </section>
 
-    <!-- CURRENTLY BUILDING -->
-    <section class="building content-section" id="building">
-      <div class="section-inner">
-        <div class="section-head">
-          <h2 class="reveal-heading">Currently Building</h2>
-        </div>
-        <div class="building-content">
-          <p class="reveal-item">
-            Migrating a unified LangGraph implementation into independently compiled
-            <strong>agent microservices</strong>, coordinated through shared Context and Memory MCP servers.
-            The architecture follows a plan-then-execute orchestration pattern, with human-in-the-loop
-            handled as a system-level state machine rather than a per-agent concern.
-          </p>
-          <p class="reveal-item">
-            Currently validating this with a single consolidated <strong>Intent Agent</strong>:
-            structured intent schema in, a rendered understanding card out, before expanding to the
-            full multi-agent workflow.
-          </p>
-        </div>
-      </div>
-    </section>
-
     <!-- ABOUT -->
     <section class="about content-section" id="about">
       <div class="section-inner">
@@ -278,28 +256,40 @@
           <p class="section-sub reveal-sub">The parts that don't fit on a resume.</p>
         </div>
 
-        <div class="off-grid">
-          <button class="off-tile off-tennis reveal-item" id="tile-tennis" type="button">
-            <span class="off-emoji" aria-hidden="true">🎾</span>
-            <span class="off-title">Tennis</span>
-            <span class="off-sub">Click for a rally. The bot plays a mean baseline game.</span>
-          </button>
-          <div class="off-tile reveal-item">
-            <span class="off-emoji" aria-hidden="true">🎮</span>
-            <span class="off-title">Video games</span>
-            <span class="off-sub">Usually mid-way through something on the PS5.</span>
-          </div>
-          <button class="off-tile off-lego reveal-item" id="tile-lego" type="button">
-            <span class="off-emoji" aria-hidden="true">🧱</span>
-            <span class="off-title">LEGO</span>
-            <span class="off-sub">Click it. Everything is modular if you try hard enough.</span>
-          </button>
-          <div class="off-tile reveal-item">
-            <span class="off-emoji" aria-hidden="true">🤖</span>
-            <span class="off-title">Robotics</span>
-            <span class="off-sub">Agents with bodies. The long-term obsession.</span>
-          </div>
-        </div>
+        <ul class="off-ledger">
+          <li class="off-entry reveal-item">
+            <button class="off-entry-inner off-interactive" id="tile-tennis" type="button">
+              <span class="off-tag mono off-tag-sage">Tennis</span>
+              <span class="off-body">
+                <span class="off-desc">Tap in for a rally. The bot plays a mean baseline game.</span>
+              </span>
+            </button>
+          </li>
+          <li class="off-entry reveal-item">
+            <div class="off-entry-inner">
+              <span class="off-tag mono off-tag-butter">Games</span>
+              <span class="off-body">
+                <span class="off-desc">Usually mid-way through something on the PS5.</span>
+              </span>
+            </div>
+          </li>
+          <li class="off-entry reveal-item">
+            <button class="off-entry-inner off-interactive" id="tile-lego" type="button">
+              <span class="off-tag mono off-tag-blush">LEGO</span>
+              <span class="off-body">
+                <span class="off-desc">Tap the tag. Everything is modular if you try hard enough.</span>
+              </span>
+            </button>
+          </li>
+          <li class="off-entry reveal-item">
+            <div class="off-entry-inner">
+              <span class="off-tag mono off-tag-accent">Robotics</span>
+              <span class="off-body">
+                <span class="off-desc">Agents with bodies. The long-term obsession.</span>
+              </span>
+            </div>
+          </li>
+        </ul>
       </div>
     </section>
 
@@ -336,7 +326,7 @@
   <!-- PONG -->
   <div class="pong" id="pong" role="dialog" aria-modal="true" aria-label="Tennis pong game" hidden>
     <canvas id="pong-canvas"></canvas>
-    <p class="pong-hint mono">move: mouse / touch · first to 5 · ESC to quit</p>
+    <p class="pong-hint mono">move: mouse / touch · first to 5 · esc or tap-at-match-end to quit</p>
   </div>
 
   <!-- toast -->

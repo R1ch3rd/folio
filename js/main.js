@@ -130,10 +130,11 @@ function initCanvas() {
 
   const NODE_COUNT = 52;
   const MAX_DIST   = 165;
-  const CURSOR_DIST = 210;
+  const CURSOR_DIST = 240;
   const SPEED      = prefersReducedMotion ? 0 : 0.26;
-  const LINE_RGB   = '217,119,87';   /* Claude orange */
-  const NODE_RGB   = '176,81,47';    /* deep terracotta */
+  const LINE_RGB   = '217,119,87';   /* Claude orange, ambient mesh */
+  const NODE_RGB   = '176,81,47';    /* deep terracotta, node fill */
+  const CURSOR_RGB = '199,90,53';    /* bold accent, cursor links */
 
   let W, H, nodes = [];
   let px = null, py = null;
@@ -188,20 +189,33 @@ function initCanvas() {
         const dx = nodes[i].x - px, dy = nodes[i].y - py;
         const d = Math.sqrt(dx * dx + dy * dy);
         if (d < CURSOR_DIST) {
+          const t = 1 - d / CURSOR_DIST;
           ctx.beginPath();
           ctx.moveTo(nodes[i].x, nodes[i].y);
           ctx.lineTo(px, py);
-          ctx.strokeStyle = `rgba(${NODE_RGB},${(1 - d / CURSOR_DIST) * 0.45})`;
-          ctx.lineWidth = 0.9;
+          ctx.strokeStyle = `rgba(${CURSOR_RGB},${t * 0.85})`;
+          ctx.lineWidth = 1.1 + t * 1.1;
+          ctx.shadowColor = `rgba(${CURSOR_RGB},0.55)`;
+          ctx.shadowBlur = 5;
           ctx.stroke();
+          ctx.shadowBlur = 0;
         }
       }
     }
 
     for (const n of nodes) {
+      let alpha = 0.45, radius = n.r;
+      if (px !== null) {
+        const d = Math.hypot(n.x - px, n.y - py);
+        if (d < CURSOR_DIST) {
+          const t = 1 - d / CURSOR_DIST;
+          alpha = 0.45 + t * 0.5;
+          radius = n.r + t * 1.6;
+        }
+      }
       ctx.beginPath();
-      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${NODE_RGB},0.45)`;
+      ctx.arc(n.x, n.y, radius, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${NODE_RGB},${alpha})`;
       ctx.fill();
     }
 
@@ -341,7 +355,7 @@ function initAnimations() {
   });
 
   gsap.to('#neural-canvas', {
-    opacity: 0.14, ease: 'none',
+    opacity: 0.5, ease: 'none',
     scrollTrigger: { trigger: '.hero', start: 'bottom 65%', end: 'bottom top', scrub: true },
   });
 
@@ -782,7 +796,7 @@ function initPong() {
       } else {
         ctx.fillText('the baseline bot shows no mercy. R for a rematch.', W / 2, H / 2 + 18);
       }
-      ctx.fillText('R rematch · ESC exit', W / 2, H / 2 + 52);
+      ctx.fillText('tap to exit · R to rematch', W / 2, H / 2 + 52);
     }
 
     raf = requestAnimationFrame(loop);
@@ -804,6 +818,11 @@ function initPong() {
     else if ((e.key === 'r' || e.key === 'R') && gameOver) startGame();
   }
 
+  /* mobile: tapping anywhere once the match is over exits (no keyboard needed) */
+  function onPointerUp() {
+    if (gameOver) closePong();
+  }
+
   function openPong() {
     if (open) return;
     open = true;
@@ -816,6 +835,7 @@ function initPong() {
     window.addEventListener('touchmove', onMove, { passive: false });
     window.addEventListener('keydown', onKey);
     window.addEventListener('resize', resize);
+    canvas.addEventListener('pointerup', onPointerUp);
     loop();
   }
 
@@ -830,6 +850,7 @@ function initPong() {
     window.removeEventListener('touchmove', onMove);
     window.removeEventListener('keydown', onKey);
     window.removeEventListener('resize', resize);
+    canvas.removeEventListener('pointerup', onPointerUp);
   }
 
   window.__openPong = openPong;
@@ -844,17 +865,18 @@ function initPong() {
 function initLego() {
   const tile = document.getElementById('tile-lego');
   if (!tile || prefersReducedMotion) return;
+  const anchor = tile.querySelector('.off-tag') || tile;
   const COLORS = ['#D9453B', '#F2C14E', '#3E7CB1', '#5B8C7E', '#D97757'];
 
   tile.addEventListener('click', () => {
-    const rect = tile.getBoundingClientRect();
+    const rect = anchor.getBoundingClientRect();
     for (let i = 0; i < 14; i++) {
       const brick = document.createElement('span');
       brick.className = 'lego-brick';
       brick.style.background = COLORS[i % COLORS.length];
       brick.style.left = (rect.width / 2) + 'px';
       brick.style.top = (rect.height / 2) + 'px';
-      tile.appendChild(brick);
+      anchor.appendChild(brick);
 
       const angle = Math.random() * Math.PI * 2;
       const dist = 60 + Math.random() * 90;
