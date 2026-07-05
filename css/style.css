@@ -645,6 +645,20 @@ body.has-cursor .cursor-dot, body.has-cursor .cursor-ring { opacity: 1; }
   letter-spacing: 0.02em;
 }
 
+.project-links {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.project-repo-link {
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--accent-deep);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease;
+}
+.project-repo-link:hover { border-bottom-color: var(--accent); }
+
 /* ============================================================
    ABOUT
    ============================================================ */
