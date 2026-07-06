@@ -603,6 +603,7 @@ function initPalette() {
     { label: 'Open GitHub', hint: 'link', act: () => window.open('https://github.com/R1ch3rd', '_blank') },
     { label: 'Open LinkedIn', hint: 'link', act: () => window.open('https://www.linkedin.com/in/richard-samuel-d/', '_blank') },
     { label: 'Copy email address', hint: 'action', act: copyEmail },
+    { label: 'Ask my work anything', hint: 'chat', act: () => { close(); if (window.__openAskMe) window.__openAskMe(); } },
     { label: 'Play tennis (pong)', hint: 'game', act: () => { close(); if (window.__openPong) window.__openPong(); } },
     { label: 'Replay boot sequence', hint: 'system', act: () => { try { sessionStorage.removeItem('rs-booted'); } catch (e) {} location.reload(); } },
   ];
@@ -946,6 +947,171 @@ function initConsole() {
 }
 
 /* ============================================================
+   ASK-MY-WORK CHAT WIDGET
+   Talks to aRAG's public guest endpoint (workspace: portfolio).
+   Stateless server-side; history lives in sessionStorage only.
+   ============================================================ */
+function initAskMe() {
+  const API = 'https://zxfxvm0t0b.execute-api.us-east-1.amazonaws.com/prod/guest/chat';
+  const fab = document.getElementById('askme-fab');
+  const root = document.getElementById('askme');
+  const body = document.getElementById('askme-body');
+  const intro = document.getElementById('askme-intro');
+  const chips = document.getElementById('askme-chips');
+  const form = document.getElementById('askme-form');
+  const input = document.getElementById('askme-input');
+  const sendBtn = document.getElementById('askme-send');
+  const closeBtn = document.getElementById('askme-close');
+  if (!fab || !root || !body || !form || !input) return;
+
+  let busy = false;
+
+  /* minimal, escape-first markdown: bold, inline code, bullet lists */
+  function mdToHtml(text) {
+    const esc = text
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const lines = esc.split(/\r?\n/);
+    let html = '', inList = false;
+    const inline = (s) => s
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/`([^`]+)`/g, '<code>$1</code>');
+    for (const line of lines) {
+      const li = line.match(/^\s*[*-]\s+(.*)$/);
+      if (li) {
+        if (!inList) { html += '<ul>'; inList = true; }
+        html += '<li>' + inline(li[1]) + '</li>';
+      } else {
+        if (inList) { html += '</ul>'; inList = false; }
+        if (line.trim()) html += '<p>' + inline(line) + '</p>';
+      }
+    }
+    if (inList) html += '</ul>';
+    return html || '<p></p>';
+  }
+
+  function addMsg(role, content, sources) {
+    if (intro && intro.parentNode) intro.remove();
+    const div = document.createElement('div');
+    div.className = 'askme-msg ' + (role === 'user' ? 'user' : 'bot');
+    if (role === 'user') {
+      div.textContent = content;
+    } else {
+      div.innerHTML = mdToHtml(content);
+      if (sources && sources.length) {
+        const src = document.createElement('div');
+        src.className = 'askme-sources';
+        src.textContent = 'source: ' + sources.map((s) => s.filename).filter(Boolean).join(', ');
+        div.appendChild(src);
+      }
+    }
+    body.appendChild(div);
+    body.scrollTop = body.scrollHeight;
+    return div;
+  }
+
+  function saveHistory() {
+    try {
+      const msgs = [...body.querySelectorAll('.askme-msg')].map((m) => ({
+        role: m.classList.contains('user') ? 'user' : 'bot',
+        html: m.innerHTML,
+      }));
+      sessionStorage.setItem('askme-history', JSON.stringify(msgs.slice(-20)));
+    } catch (e) {}
+  }
+
+  function restoreHistory() {
+    try {
+      const raw = sessionStorage.getItem('askme-history');
+      if (!raw) return;
+      const msgs = JSON.parse(raw);
+      if (!msgs.length) return;
+      if (intro && intro.parentNode) intro.remove();
+      for (const m of msgs) {
+        const div = document.createElement('div');
+        div.className = 'askme-msg ' + (m.role === 'user' ? 'user' : 'bot');
+        div.innerHTML = m.html;
+        body.appendChild(div);
+      }
+      body.scrollTop = body.scrollHeight;
+    } catch (e) {}
+  }
+
+  async function ask(question) {
+    const message = (question || '').trim();
+    if (!message || busy) return;
+    busy = true;
+    sendBtn.disabled = true;
+    input.value = '';
+    addMsg('user', message);
+
+    const typing = document.createElement('div');
+    typing.className = 'askme-typing';
+    typing.innerHTML = '<span></span><span></span><span></span>';
+    body.appendChild(typing);
+    body.scrollTop = body.scrollHeight;
+
+    try {
+      const res = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, workspace: 'portfolio' }),
+      });
+      const data = await res.json();
+      typing.remove();
+      if (!res.ok) throw new Error(data && data.error ? data.error : 'Request failed');
+      addMsg('bot', data.answer, data.sources);
+    } catch (e) {
+      typing.remove();
+      const err = document.createElement('div');
+      err.className = 'askme-error';
+      err.textContent = e && e.message === 'Failed to fetch'
+        ? 'The assistant was waking up. Ask again, it should answer now.'
+        : (e.message || 'Something went wrong. Try again in a moment.');
+      body.appendChild(err);
+      body.scrollTop = body.scrollHeight;
+      setTimeout(() => err.remove(), 6000);
+    } finally {
+      busy = false;
+      sendBtn.disabled = false;
+      saveHistory();
+      input.focus();
+    }
+  }
+
+  function openPanel() {
+    root.hidden = false;
+    fab.classList.add('hidden-by-panel');
+    input.focus();
+  }
+
+  function closePanel() {
+    root.hidden = true;
+    fab.classList.remove('hidden-by-panel');
+  }
+
+  fab.addEventListener('click', openPanel);
+  closeBtn.addEventListener('click', closePanel);
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !root.hidden) closePanel();
+  });
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    ask(input.value);
+  });
+
+  if (chips) {
+    chips.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (btn) ask(btn.textContent);
+    });
+  }
+
+  restoreHistory();
+  window.__openAskMe = openPanel;
+}
+
+/* ============================================================
    BOOTSTRAP — every module isolated; one failure
    can never take down the page
    ============================================================ */
@@ -965,5 +1131,6 @@ safe(initPalette);
 safe(initPong);
 safe(initLego);
 safe(initMagnet);
+safe(initAskMe);
 safe(initFooterBoot);
 safe(initConsole);
