@@ -648,9 +648,22 @@ body.has-cursor .cursor-dot, body.has-cursor .cursor-ring { opacity: 1; }
 
 .project-links {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
+  align-items: center;
+  margin-top: 2px;
 }
+.project-demo-link {
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+  color: #FFFFFF;
+  background: var(--accent-btn);
+  padding: 5px 12px;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+}
+.project-demo-link:hover { background: var(--accent); }
 .project-repo-link {
   font-size: 12px;
   letter-spacing: 0.02em;
@@ -659,6 +672,12 @@ body.has-cursor .cursor-dot, body.has-cursor .cursor-ring { opacity: 1; }
   transition: border-color 0.2s ease;
 }
 .project-repo-link:hover { border-bottom-color: var(--accent); }
+.project-note {
+  margin-top: 20px;
+  font-size: 11.5px;
+  color: var(--text-faint);
+  letter-spacing: 0.02em;
+}
 
 /* ============================================================
    ABOUT

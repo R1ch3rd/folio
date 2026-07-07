@@ -24,7 +24,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=7" />
+  <link rel="stylesheet" href="css/style.css?v=8" />
 </head>
 <body>
 
@@ -187,7 +187,7 @@
             <div class="project-top">
               <h3>aRAG</h3>
             </div>
-            <p>Serverless retrieval-augmented generation platform: upload documents and converse with them through AWS Lambda functions, Cognito authentication, Pinecone vector search, and Redis-cached DynamoDB storage behind a React interface.</p>
+            <p>Serverless retrieval-augmented generation platform: upload documents and converse with them through AWS Lambda functions, Cognito authentication, Pinecone vector search, and Redis-cached DynamoDB storage behind a React interface. This site's chat widget runs on it.</p>
             <div class="tag-row">
               <span class="tag mono">AWS Lambda</span>
               <span class="tag mono">RAG</span>
@@ -195,51 +195,62 @@
               <span class="tag mono">React</span>
             </div>
             <div class="project-links">
+              <a href="https://arag-swart.vercel.app/try" target="_blank" rel="noopener" class="project-demo-link mono">Live demo →</a>
               <a href="https://github.com/R1ch3rd/arag_frontend" target="_blank" rel="noopener" class="project-repo-link mono">Frontend ↗</a>
               <a href="https://github.com/R1ch3rd/arag_backend" target="_blank" rel="noopener" class="project-repo-link mono">Backend ↗</a>
             </div>
           </div>
 
-          <a class="project-card reveal-item" href="https://github.com/R1ch3rd/FinAL" target="_blank" rel="noopener">
+          <div class="project-card reveal-item">
             <div class="project-top">
               <h3>FinAL</h3>
-              <span class="project-arrow" aria-hidden="true">↗</span>
             </div>
-            <p>AI-powered stock analysis platform: LSTM price forecasting, BERT sentiment analysis on financial news, and Gemini-driven insights layered over live market data.</p>
+            <p>AI stock analysis: LSTM 7-day price forecasting, BERT sentiment on news headlines, and a Gemini-powered expense chat, over live market data from Finnhub and yfinance.</p>
             <div class="tag-row">
               <span class="tag mono">FastAPI</span>
               <span class="tag mono">PyTorch</span>
               <span class="tag mono">React</span>
             </div>
-          </a>
+            <div class="project-links">
+              <a href="https://final-psi-bice.vercel.app" target="_blank" rel="noopener" class="project-demo-link mono">Live demo →</a>
+              <a href="https://github.com/R1ch3rd/FinAL" target="_blank" rel="noopener" class="project-repo-link mono">Code ↗</a>
+            </div>
+          </div>
 
-          <a class="project-card reveal-item" href="https://github.com/R1ch3rd/Ideathon_2024" target="_blank" rel="noopener">
+          <div class="project-card reveal-item">
             <div class="project-top">
               <h3>PixelPerfect</h3>
-              <span class="project-arrow" aria-hidden="true">↗</span>
             </div>
-            <p>AI image transformation suite: ESRGAN upscaling, Stable Diffusion generation, and Gemini-powered captioning behind a FastAPI backend.</p>
+            <p>AI image studio: generate images from text prompts, caption them with ViT-GPT2, summarize them with Gemini vision, and sharpen photos. FastAPI backend.</p>
             <div class="tag-row">
               <span class="tag mono">FastAPI</span>
-              <span class="tag mono">Stable Diffusion</span>
+              <span class="tag mono">Gemini</span>
               <span class="tag mono">React</span>
             </div>
-          </a>
+            <div class="project-links">
+              <a href="https://pixelperfect-nu.vercel.app" target="_blank" rel="noopener" class="project-demo-link mono">Live demo →</a>
+              <a href="https://github.com/R1ch3rd/Ideathon_2024" target="_blank" rel="noopener" class="project-repo-link mono">Code ↗</a>
+            </div>
+          </div>
 
-          <a class="project-card reveal-item" href="https://github.com/R1ch3rd/SureScan" target="_blank" rel="noopener">
+          <div class="project-card reveal-item">
             <div class="project-top">
               <h3>SureScan</h3>
-              <span class="project-arrow" aria-hidden="true">↗</span>
             </div>
-            <p>Brain tumor detection and diagnosis assistant: YOLOv11 localization and a classifier ensemble, with an AI chat interface for interpreting scan results.</p>
+            <p>Brain tumor detection and diagnosis: YOLOv11 localization, EfficientNet classification across 44 classes, XGBoost survival prediction, and Gemini-powered report Q&amp;A.</p>
             <div class="tag-row">
               <span class="tag mono">YOLOv11</span>
               <span class="tag mono">Computer Vision</span>
               <span class="tag mono">Medical Imaging</span>
             </div>
-          </a>
+            <div class="project-links">
+              <a href="https://surescan-tawny.vercel.app" target="_blank" rel="noopener" class="project-demo-link mono">Live demo →</a>
+              <a href="https://github.com/R1ch3rd/SureScan" target="_blank" rel="noopener" class="project-repo-link mono">Code ↗</a>
+            </div>
+          </div>
 
         </div>
+        <p class="project-note mono reveal-item">Demos are hosted on free tiers and may take ~30s to wake on first load.</p>
       </div>
     </section>
 
@@ -384,6 +395,6 @@
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
-  <script src="js/main.js?v=7"></script>
+  <script src="js/main.js?v=8"></script>
 </body>
 </html>
