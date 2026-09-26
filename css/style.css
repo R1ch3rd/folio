@@ -473,6 +473,7 @@ body.has-cursor .cursor-dot, body.has-cursor .cursor-ring { opacity: 1; }
   transition: border-color 0.2s ease;
 }
 .citation-code:hover { border-bottom-color: var(--accent); }
+.citation-code + .citation-code { margin-left: 20px; }
 
 @media (max-width: 600px) {
   .citation { grid-template-columns: 1fr; gap: 10px; }

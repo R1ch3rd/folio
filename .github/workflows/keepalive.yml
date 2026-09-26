@@ -1,0 +1,32 @@
+name: Keep demo backends awake
+
+# Free Hugging Face Spaces sleep after 48h without traffic, which makes the
+# first demo click take ~45s. Ping each backend's /health every 8 hours.
+on:
+  schedule:
+    - cron: "17 */8 * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping backends
+        run: |
+          fail=0
+          for url in \
+            https://r1ch3rd-final-api.hf.space/health \
+            https://r1ch3rd-pixelperfect-api.hf.space/health \
+            https://r1ch3rd-surescan-api.hf.space/health \
+            ; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 120 --retry 2 --retry-delay 30 "$url")
+            echo "$code $url"
+            [ "$code" = "200" ] || fail=1
+          done
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 60 -X POST \
+            -H 'Content-Type: application/json' \
+            -d '{"message":"ping","workspace":"portfolio"}' \
+            https://zxfxvm0t0b.execute-api.us-east-1.amazonaws.com/prod/guest/chat)
+          echo "$code aRAG guest chat"
+          [ "$code" = "200" ] || fail=1
+          exit $fail
