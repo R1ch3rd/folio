@@ -23,10 +23,4 @@ jobs:
             echo "$code $url"
             [ "$code" = "200" ] || fail=1
           done
-          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 60 -X POST \
-            -H 'Content-Type: application/json' \
-            -d '{"message":"ping","workspace":"portfolio"}' \
-            https://zxfxvm0t0b.execute-api.us-east-1.amazonaws.com/prod/guest/chat)
-          echo "$code aRAG guest chat"
-          [ "$code" = "200" ] || fail=1
           exit $fail
