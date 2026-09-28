@@ -34,90 +34,10 @@ function toast(msg) {
 }
 
 /* ============================================================
-   BOOT SEQUENCE — runs first, failsafe guaranteed
+   READY SIGNAL — hero animations wait for this event
    ============================================================ */
 function initBoot() {
-  const el = document.getElementById('boot');
-  const skip = document.documentElement.dataset.boot === 'skip';
-  let finished = false;
-
-  const done = () => {
-    if (finished) return;
-    finished = true;
-    document.body.classList.remove('no-scroll');
-    if (el && el.parentNode) {
-      el.classList.add('boot-out');
-      setTimeout(() => { if (el.parentNode) el.remove(); }, 430);
-    }
-    window.dispatchEvent(new Event('boot:done'));
-  };
-
-  if (!el || skip) {
-    if (el) el.remove();
-    requestAnimationFrame(() => {
-      if (!finished) { finished = true; window.dispatchEvent(new Event('boot:done')); }
-    });
-    return;
-  }
-
-  /* FAILSAFE: no matter what breaks, the overlay dies within 4.5s */
-  setTimeout(done, 4500);
-
-  document.body.classList.add('no-scroll');
-  try { sessionStorage.setItem('rs-booted', '1'); } catch (e) {}
-
-  const linesEl = el.querySelector('.boot-lines');
-  const bar = el.querySelector('.boot-bar-fill');
-  const timers = [];
-
-  const LINES = [
-    { text: 'RS://BOOT v3.0.0', dim: false },
-    { text: '> mounting /research ............... ok', dim: true },
-    { text: '> loading neural mesh (52 nodes) ... ok', dim: true },
-    { text: '> calibrating adversarial defenses . ok', dim: true },
-    { text: '> waking agents .................... ok', dim: true },
-    { text: '> tennis reflexes .................. ready', dim: true },
-    { text: 'ALL SYSTEMS NOMINAL', dim: false },
-  ];
-
-  function decode(div, text, duration) {
-    const start = performance.now();
-    const step = (now) => {
-      const p = Math.min(1, (now - start) / duration);
-      const reveal = Math.floor(p * text.length);
-      let out = text.slice(0, reveal);
-      for (let i = reveal; i < Math.min(text.length, reveal + 3); i++) {
-        out += SCRAMBLE_CHARS[(Math.random() * SCRAMBLE_CHARS.length) | 0];
-      }
-      div.textContent = out;
-      if (p < 1 && !finished) requestAnimationFrame(step);
-      else div.textContent = text;
-    };
-    requestAnimationFrame(step);
-  }
-
-  let t = 200;
-  LINES.forEach((ln, i) => {
-    timers.push(setTimeout(() => {
-      if (finished || !linesEl) return;
-      const div = document.createElement('div');
-      div.className = 'boot-line' + (ln.dim ? ' dim' : '');
-      linesEl.appendChild(div);
-      decode(div, ln.text, 220);
-      if (bar) bar.style.width = ((i + 1) / LINES.length) * 100 + '%';
-      if (i === LINES.length - 1) timers.push(setTimeout(done, 620));
-    }, t));
-    t += 175 + (i % 3) * 55;
-  });
-
-  const skipHandler = (e) => {
-    if (e.type === 'keydown' && e.key !== 'Escape') return;
-    window.removeEventListener('keydown', skipHandler);
-    timers.forEach(clearTimeout);
-    done();
-  };
-  window.addEventListener('keydown', skipHandler);
-  el.addEventListener('click', skipHandler);
+  requestAnimationFrame(() => window.dispatchEvent(new Event('boot:done')));
 }
 
 /* ============================================================
@@ -328,7 +248,7 @@ function initAnimations() {
   gsap.set('.hero-eyebrow',    { opacity: 0 });
   gsap.set('.name-line-inner', { y: '110%' });
   gsap.set('.hero-tagline',    { opacity: 0, y: 18 });
-  gsap.set('.hero-links',      { opacity: 0, y: 12 });
+  gsap.set('.hero-links, .hero-ask', { opacity: 0, y: 12 });
   gsap.set('.scroll-hint',     { opacity: 0 });
 
   function heroIntro() {
@@ -340,7 +260,7 @@ function initAnimations() {
       })
       .to('.name-line-inner', { y: '0%', duration: 1.0, stagger: 0.12, ease: 'power4.out' }, '-=0.15')
       .to('.hero-tagline', { opacity: 1, y: 0, duration: 0.8 }, '-=0.55')
-      .to('.hero-links',   { opacity: 1, y: 0, duration: 0.7 }, '-=0.55')
+      .to('.hero-links, .hero-ask', { opacity: 1, y: 0, duration: 0.7, stagger: 0.1 }, '-=0.55')
       .to('.scroll-hint',  { opacity: 1, duration: 0.6 }, '-=0.3');
   }
 
@@ -586,7 +506,7 @@ function initPalette() {
 
   function copyEmail() {
     close();
-    const email = 'richysamdom@gmail.com';
+    const email = 'richard.samuel.rsd@gmail.com';
     if (navigator.clipboard) {
       navigator.clipboard.writeText(email).then(() => toast('email copied to clipboard'));
     } else {
@@ -605,7 +525,6 @@ function initPalette() {
     { label: 'Copy email address', hint: 'action', act: copyEmail },
     { label: 'Ask my work anything', hint: 'chat', act: () => { close(); if (window.__openAskMe) window.__openAskMe(); } },
     { label: 'Play tennis (pong)', hint: 'game', act: () => { close(); if (window.__openPong) window.__openPong(); } },
-    { label: 'Replay boot sequence', hint: 'system', act: () => { try { sessionStorage.removeItem('rs-booted'); } catch (e) {} location.reload(); } },
   ];
 
   let filtered = ITEMS, active = 0, open = false;
@@ -680,23 +599,32 @@ function initPong() {
   if (!root || !canvas) return;
   const ctx = canvas.getContext('2d');
 
-  let raf = 0, open = false;
+  let raf = 0, open = false, last = 0;
   let W, H, dpr;
   const P = { w: 12, h: 92 };
   let p1, ai, ball, score1, score2, trail, gameOver, winner;
+
+  /* Speeds are in court-widths / court-heights per second and integrated
+     with frame time, so a rally feels the same on any screen size and
+     refresh rate (60Hz desktop, 120Hz phone). */
+  const SERVE_CROSS_S = 1.9;   /* seconds for a serve to cross the court */
+  const MIN_CROSS_S = 0.75;    /* fastest a rally can get */
+  const SPIN = 0.9;            /* max vertical speed off the paddle, heights/s */
+  const AI_SPEED = 0.7;        /* bot paddle max speed, heights/s */
 
   function resize() {
     dpr = Math.min(2, window.devicePixelRatio || 1);
     W = window.innerWidth; H = window.innerHeight;
     canvas.width = W * dpr; canvas.height = H * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    P.h = Math.max(64, Math.min(110, H * 0.13));
   }
 
   function serve(dir) {
     ball = {
       x: W / 2, y: H / 2,
-      vx: 5.4 * dir,
-      vy: (Math.random() - 0.5) * 6,
+      vx: (W / SERVE_CROSS_S) * dir,
+      vy: (Math.random() - 0.5) * 0.5 * H,
       r: 8,
     };
     trail = [];
@@ -725,32 +653,44 @@ function initPong() {
     ctx.setLineDash([]);
   }
 
-  function loop() {
+  function loop(now) {
+    /* clamp dt so a backgrounded tab doesn't teleport the ball */
+    const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
+    last = now;
     drawCourt();
 
     if (!gameOver) {
       const target = ball.vx > 0 ? ball.y : H / 2;
       const diff = target - ai.y;
-      ai.y += Math.max(-4.6, Math.min(4.6, diff * 0.08));
+      const step = AI_SPEED * H * dt;
+      ai.y += Math.max(-step, Math.min(step, diff * (1 - Math.exp(-5 * dt))));
 
-      ball.x += ball.vx;
-      ball.y += ball.vy;
+      const prevX = ball.x;
+      ball.x += ball.vx * dt;
+      ball.y += ball.vy * dt;
       trail.push({ x: ball.x, y: ball.y });
       if (trail.length > 10) trail.shift();
 
-      if (ball.y < 36 + ball.r || ball.y > H - 36 - ball.r) ball.vy *= -1;
+      const top = 36 + ball.r, bottom = H - 36 - ball.r;
+      if (ball.y < top)    { ball.y = top;    ball.vy = Math.abs(ball.vy); }
+      if (ball.y > bottom) { ball.y = bottom; ball.vy = -Math.abs(ball.vy); }
 
-      const px = 48;
-      if (ball.vx < 0 && ball.x - ball.r < px + P.w && ball.x - ball.r > px &&
+      const maxVx = W / MIN_CROSS_S;
+      /* swept checks: the ball can move further than the paddle's width in
+         one frame at top speed, so test crossing the paddle face instead */
+      const face1 = 48 + P.w;
+      if (ball.vx < 0 && prevX - ball.r >= face1 && ball.x - ball.r <= face1 &&
           Math.abs(ball.y - p1.y) < P.h / 2 + ball.r) {
-        ball.vx = Math.min(14, -ball.vx * 1.06);
-        ball.vy = ((ball.y - p1.y) / (P.h / 2)) * 5.5;
+        ball.x = face1 + ball.r;
+        ball.vx = Math.min(maxVx, -ball.vx * 1.06);
+        ball.vy = ((ball.y - p1.y) / (P.h / 2)) * SPIN * H;
       }
-      const ax = W - 48 - P.w;
-      if (ball.vx > 0 && ball.x + ball.r > ax && ball.x + ball.r < ax + P.w + 12 &&
+      const face2 = W - 48 - P.w;
+      if (ball.vx > 0 && prevX + ball.r <= face2 && ball.x + ball.r >= face2 &&
           Math.abs(ball.y - ai.y) < P.h / 2 + ball.r) {
-        ball.vx = Math.max(-14, -ball.vx * 1.06);
-        ball.vy = ((ball.y - ai.y) / (P.h / 2)) * 5.5;
+        ball.x = face2 - ball.r;
+        ball.vx = Math.max(-maxVx, -ball.vx * 1.06);
+        ball.vy = ((ball.y - ai.y) / (P.h / 2)) * SPIN * H;
       }
 
       if (ball.x < -20) { score2++; checkWin(); if (!gameOver) serve(1); }
@@ -793,9 +733,9 @@ function initPong() {
       ctx.font = '400 15px "JetBrains Mono", monospace';
       ctx.fillStyle = 'rgba(255,255,255,0.85)';
       if (winner === 'you') {
-        ctx.fillText('beat the bot? mention "pong" when you email me. instant credibility.', W / 2, H / 2 + 18);
+        ctx.fillText('well played.', W / 2, H / 2 + 18);
       } else {
-        ctx.fillText('the baseline bot shows no mercy. R for a rematch.', W / 2, H / 2 + 18);
+        ctx.fillText('better luck next match.', W / 2, H / 2 + 18);
       }
       ctx.fillText('tap to exit · R to rematch', W / 2, H / 2 + 52);
     }
@@ -816,7 +756,7 @@ function initPong() {
 
   function onKey(e) {
     if (e.key === 'Escape') closePong();
-    else if ((e.key === 'r' || e.key === 'R') && gameOver) startGame();
+    else if ((e.key === 'r' || e.key === 'R') && gameOver) { startGame(); }
   }
 
   /* mobile: tapping anywhere once the match is over exits (no keyboard needed) */
@@ -832,12 +772,13 @@ function initPong() {
     if (window.__lenis) window.__lenis.stop();
     resize();
     startGame();
+    last = performance.now();
     window.addEventListener('mousemove', onMove);
     window.addEventListener('touchmove', onMove, { passive: false });
     window.addEventListener('keydown', onKey);
     window.addEventListener('resize', resize);
     canvas.addEventListener('pointerup', onPointerUp);
-    loop();
+    raf = requestAnimationFrame(loop);
   }
 
   function closePong() {
@@ -923,23 +864,11 @@ function initMagnet() {
 }
 
 /* ============================================================
-   FOOTER BOOT REPLAY
-   ============================================================ */
-function initFooterBoot() {
-  const btn = document.getElementById('footer-boot');
-  if (!btn) return;
-  btn.addEventListener('click', () => {
-    try { sessionStorage.removeItem('rs-booted'); } catch (e) {}
-    location.reload();
-  });
-}
-
-/* ============================================================
    CONSOLE EASTER EGG
    ============================================================ */
 function initConsole() {
   console.log(
-    '%cRS %c// you opened the console. respect.\n%cif you want to talk agents, satellites, or pong strategy → richysamdom@gmail.com',
+    '%cRS %c// you opened the console. respect.\n%cif you want to talk agents, satellites, or pong strategy → richard.samuel.rsd@gmail.com',
     'font-size:28px;font-weight:700;color:#B0512F;',
     'font-size:12px;color:#6B6759;',
     'font-size:12px;color:#D97757;'
@@ -1090,6 +1019,8 @@ function initAskMe() {
   }
 
   fab.addEventListener('click', openPanel);
+  const heroAsk = document.getElementById('hero-ask');
+  if (heroAsk) heroAsk.addEventListener('click', openPanel);
   closeBtn.addEventListener('click', closePanel);
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !root.hidden) closePanel();
@@ -1132,5 +1063,4 @@ safe(initPong);
 safe(initLego);
 safe(initMagnet);
 safe(initAskMe);
-safe(initFooterBoot);
 safe(initConsole);

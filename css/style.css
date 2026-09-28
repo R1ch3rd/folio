@@ -36,7 +36,6 @@
   --z-palette: 40;
   --z-pong: 50;
   --z-toast: 60;
-  --z-boot: 70;
   --z-cursor: 80;
 }
 
@@ -74,66 +73,6 @@ a { color: inherit; text-decoration: none; }
 ul { margin: 0; padding: 0; list-style: none; }
 button { font: inherit; color: inherit; }
 .mono { font-family: var(--font-mono); }
-
-/* ============================================================
-   BOOT SEQUENCE — paper terminal
-   ============================================================ */
-#boot {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-boot);
-  background: var(--bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-html[data-boot="skip"] #boot { display: none; }
-
-.boot-inner { width: min(560px, 86vw); }
-
-.boot-lines {
-  min-height: 176px;
-  font-size: 13px;
-  line-height: 1.7;
-  color: var(--accent-deep);
-}
-
-.boot-line { white-space: pre; }
-.boot-line.dim { color: var(--text-faint); }
-
-.boot-bar {
-  margin-top: 20px;
-  height: 2px;
-  background: rgba(217, 119, 87, 0.2);
-  border-radius: 1px;
-  overflow: hidden;
-}
-.boot-bar-fill {
-  height: 100%;
-  width: 0%;
-  background: var(--accent);
-  transition: width 0.25s ease-out;
-}
-
-.boot-skip {
-  margin: 18px 0 0;
-  font-size: 10.5px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-faint);
-}
-
-#boot.boot-out {
-  animation: boot-glitch 0.42s steps(2) forwards;
-}
-@keyframes boot-glitch {
-  0%   { opacity: 1; clip-path: inset(0 0 0 0); }
-  25%  { clip-path: inset(12% 0 64% 0); transform: translateX(-6px); }
-  50%  { clip-path: inset(58% 0 8% 0); transform: translateX(5px); }
-  75%  { opacity: 0.6; clip-path: inset(30% 0 30% 0); transform: none; }
-  100% { opacity: 0; clip-path: inset(50% 0 50% 0); }
-}
 
 /* ============================================================
    CUSTOM CURSOR
@@ -821,18 +760,6 @@ button.off-entry-inner:focus-visible {
   position: relative;
   z-index: var(--z-content);
 }
-.footer-boot {
-  background: none;
-  border: none;
-  padding: 0;
-  color: var(--text-faint);
-  font-size: 12px;
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  transition: color 0.2s ease;
-}
-.footer-boot:hover { color: var(--accent-deep); }
 
 /* ============================================================
    ASK-MY-WORK CHAT WIDGET
@@ -842,9 +769,14 @@ button.off-entry-inner:focus-visible {
   right: 22px;
   bottom: 22px;
   z-index: var(--z-chat);
-  width: 54px;
-  height: 54px;
-  border-radius: 50%;
+  height: 52px;
+  padding: 0 22px 0 18px;
+  gap: 10px;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   border: none;
   background: var(--accent-btn);
   color: #FFFFFF;
@@ -855,7 +787,57 @@ button.off-entry-inner:focus-visible {
   box-shadow: 0 8px 24px rgba(176, 81, 47, 0.35);
   transition: background 0.2s ease, transform 0.2s ease;
 }
-.askme-fab svg { width: 26px; height: 26px; }
+.askme-fab svg { width: 22px; height: 22px; flex: none; }
+.askme-fab::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid var(--accent);
+  animation: askme-pulse 2.4s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes askme-pulse {
+  0%   { opacity: 0.7; transform: scale(1); }
+  70%  { opacity: 0;   transform: scale(1.18, 1.35); }
+  100% { opacity: 0;   transform: scale(1.18, 1.35); }
+}
+@media (prefers-reduced-motion: reduce) { .askme-fab::before { animation: none; opacity: 0; } }
+@media (max-width: 480px) {
+  .askme-fab { right: 14px; bottom: 14px; height: 48px; padding: 0 18px 0 14px; font-size: 14px; }
+}
+
+.hero-ask {
+  margin-top: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 20px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent-btn);
+  color: #FFFFFF;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.hero-ask:hover { background: var(--accent); transform: translateY(-1px); }
+.hero-ask-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+  animation: hero-ask-dot 1.8s ease-out infinite;
+}
+@keyframes hero-ask-dot {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+  100% { box-shadow: 0 0 0 8px rgba(255, 255, 255, 0); }
+}
+@media (prefers-reduced-motion: reduce) { .hero-ask-dot { animation: none; } }
 .askme-fab:hover { background: var(--accent); transform: translateY(-2px); }
 .askme-fab.hidden-by-panel { display: none; }
 

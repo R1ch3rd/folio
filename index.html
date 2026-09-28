@@ -6,36 +6,19 @@
   <title>Richard Samuel — AI Engineer</title>
   <meta name="description" content="AI Engineer building agentic AI systems and production ML infrastructure. Research in remote sensing restoration and adversarial robustness." />
   <meta property="og:title" content="Richard Samuel — AI Engineer" />
-  <meta property="og:description" content="Agentic AI systems, published research, and a portfolio that boots like a robot OS." />
+  <meta property="og:description" content="Agentic AI systems, published research, and interactive demos of the work." />
   <meta property="og:url" content="https://r1ch3rd.github.io/folio/" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23F7F2E9'/%3E%3Ctext x='32' y='43' font-family='monospace' font-size='26' fill='%23D97757' text-anchor='middle'%3ERS%3C/text%3E%3C/svg%3E" />
   <meta name="theme-color" content="#F7F2E9" />
 
-  <script>
-    /* decide boot-skip before first paint */
-    try {
-      if (sessionStorage.getItem('rs-booted') || matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        document.documentElement.dataset.boot = 'skip';
-      }
-    } catch (e) { document.documentElement.dataset.boot = 'skip'; }
-  </script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=10" />
+  <link rel="stylesheet" href="css/style.css?v=11" />
 </head>
 <body>
-
-  <!-- BOOT SEQUENCE OVERLAY -->
-  <div id="boot" aria-hidden="true">
-    <div class="boot-inner">
-      <div class="boot-lines mono"></div>
-      <div class="boot-bar"><div class="boot-bar-fill"></div></div>
-      <p class="boot-skip mono">ESC to skip</p>
-    </div>
-  </div>
 
   <!-- custom cursor -->
   <div class="cursor-dot" aria-hidden="true"></div>
@@ -81,6 +64,10 @@
             <a href="https://www.linkedin.com/in/richard-samuel-d/" target="_blank" rel="noopener">LinkedIn</a>
             <a href="#contact">Get in touch</a>
           </div>
+          <button class="hero-ask" id="hero-ask" type="button">
+            <span class="hero-ask-dot" aria-hidden="true"></span>
+            Ask an AI about my work
+          </button>
           <p class="scroll-hint mono" aria-hidden="true">scroll to explore</p>
         </div>
       </div>
@@ -151,7 +138,7 @@
     <section class="demo content-section" id="demo">
       <div class="section-inner">
         <div class="section-head">
-          <h2 class="reveal-heading">Research, touchable</h2>
+          <h2 class="reveal-heading">Research, interactable</h2>
           <p class="section-sub reveal-sub">A conceptual, in-browser visualization of my GRSL work: unsupervised restoration of corrupted satellite imagery. Procedurally generated scene, real PSNR math, zero servers.</p>
         </div>
 
@@ -279,8 +266,8 @@
     <section class="offclock content-section" id="offclock">
       <div class="section-inner">
         <div class="section-head">
-          <h2 class="reveal-heading">Off the clock</h2>
-          <p class="section-sub reveal-sub">The parts that don't fit on a resume.</p>
+          <h2 class="reveal-heading">Beyond work</h2>
+          <p class="section-sub reveal-sub">Interests outside research and engineering.</p>
         </div>
 
         <ul class="off-ledger">
@@ -288,7 +275,7 @@
             <button class="off-entry-inner off-interactive" id="tile-tennis" type="button">
               <span class="off-tag mono off-tag-sage">Tennis</span>
               <span class="off-body">
-                <span class="off-desc">Tap in for a rally. The bot plays a mean baseline game.</span>
+                <span class="off-desc">A regular player. Select to play a short match against a computer opponent.</span>
               </span>
             </button>
           </li>
@@ -296,7 +283,7 @@
             <div class="off-entry-inner">
               <span class="off-tag mono off-tag-butter">Games</span>
               <span class="off-body">
-                <span class="off-desc">Usually mid-way through something on the PS5.</span>
+                <span class="off-desc">Console gaming, with an interest in interactive system design.</span>
               </span>
             </div>
           </li>
@@ -304,7 +291,7 @@
             <button class="off-entry-inner off-interactive" id="tile-lego" type="button">
               <span class="off-tag mono off-tag-blush">LEGO</span>
               <span class="off-body">
-                <span class="off-desc">Tap the tag. Everything is modular if you try hard enough.</span>
+                <span class="off-desc">Building sets; a lasting appreciation for modular design.</span>
               </span>
             </button>
           </li>
@@ -312,7 +299,7 @@
             <div class="off-entry-inner">
               <span class="off-tag mono off-tag-accent">Robotics</span>
               <span class="off-body">
-                <span class="off-desc">Agents with bodies. The long-term obsession.</span>
+                <span class="off-desc">Embodied agents: a long-term research interest.</span>
               </span>
             </div>
           </li>
@@ -325,9 +312,9 @@
       <div class="section-inner contact-inner">
         <h2 class="reveal-heading contact-heading">Get in touch</h2>
         <p class="contact-sub reveal-sub">Open to conversations on agentic AI systems, applied ML, and research collaboration.</p>
-        <a class="btn-magnet reveal-item" id="contact-magnet" href="mailto:richysamdom@gmail.com">Start a conversation</a>
+        <a class="btn-magnet reveal-item" id="contact-magnet" href="mailto:richard.samuel.rsd@gmail.com">Start a conversation</a>
         <div class="contact-links reveal-item">
-          <a href="mailto:richysamdom@gmail.com" class="contact-link mono">richysamdom@gmail.com</a>
+          <a href="mailto:richard.samuel.rsd@gmail.com" class="contact-link mono">richard.samuel.rsd@gmail.com</a>
           <a href="https://github.com/R1ch3rd" target="_blank" rel="noopener" class="contact-link mono">github.com/R1ch3rd</a>
           <a href="https://www.linkedin.com/in/richard-samuel-d/" target="_blank" rel="noopener" class="contact-link mono">linkedin.com/in/richard-samuel-d</a>
         </div>
@@ -337,7 +324,7 @@
   </main>
 
   <footer class="site-footer">
-    <p class="mono">Richard Samuel · 2026 · <button class="footer-boot mono" id="footer-boot" type="button">replay boot</button></p>
+    <p class="mono">Richard Samuel · 2026</p>
   </footer>
 
   <!-- ASK-MY-WORK CHAT WIDGET (powered by aRAG's public guest endpoint) -->
@@ -345,6 +332,7 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
       <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h8M8 14h5M21 12a8.96 8.96 0 0 1-1.05 4.2L21 21l-4.6-1.15A9 9 0 1 1 21 12z" />
     </svg>
+    <span class="askme-fab-label">Ask about my work</span>
   </button>
 
   <div class="askme" id="askme" role="dialog" aria-modal="false" aria-label="Ask about Richard's work" hidden>
@@ -395,6 +383,6 @@
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
-  <script src="js/main.js?v=10"></script>
+  <script src="js/main.js?v=11"></script>
 </body>
 </html>
