@@ -663,13 +663,17 @@ body.has-cursor .cursor-dot, body.has-cursor .cursor-ring { opacity: 1; }
   position: relative;
 }
 
-button.off-entry-inner {
+button.off-entry-inner,
+a.off-entry-inner {
   cursor: pointer;
   border-radius: 6px;
+  text-decoration: none;
   transition: background 0.2s ease;
 }
 button.off-entry-inner:hover,
-button.off-entry-inner:focus-visible {
+button.off-entry-inner:focus-visible,
+a.off-entry-inner:hover,
+a.off-entry-inner:focus-visible {
   background: var(--surface-warm);
 }
 
@@ -903,6 +907,29 @@ button.off-entry-inner:focus-visible {
   transition: color 0.2s ease;
 }
 .askme-close:hover { color: var(--ink); }
+
+/* desktop: docked chat tab, always on screen */
+.askme.docked { right: 24px; bottom: 0; }
+.askme.docked .askme-panel {
+  width: 360px;
+  height: min(470px, calc(100vh - 110px));
+  border-radius: 12px 12px 0 0;
+  border-bottom: none;
+  box-shadow: 0 -4px 36px rgba(31, 30, 27, 0.18);
+}
+.askme.docked .askme-head {
+  cursor: pointer;
+  background: var(--accent-btn);
+  border-bottom-color: transparent;
+}
+.askme.docked .askme-title { color: #FFFFFF; }
+.askme.docked .askme-sub,
+.askme.docked .askme-sub a { color: rgba(255, 255, 255, 0.82); }
+.askme.docked .askme-close { color: rgba(255, 255, 255, 0.85); font-size: 20px; }
+.askme.docked .askme-close:hover { color: #FFFFFF; }
+.askme.docked.collapsed .askme-panel { height: auto; }
+.askme.docked.collapsed .askme-body,
+.askme.docked.collapsed .askme-composer { display: none; }
 
 .askme-body {
   flex: 1;

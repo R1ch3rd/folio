@@ -1007,13 +1007,49 @@ function initAskMe() {
     }
   }
 
+  /* Desktop: the chat is a docked tab that is always on screen, expanded
+     on first visit and collapsible to its header. Phones keep the pill
+     button so the panel never covers the page uninvited. */
+  const desktop = window.matchMedia('(min-width: 900px)');
+  const head = root.querySelector('.askme-head');
+  let docked = false;
+
+  function setCollapsed(collapsed) {
+    root.classList.toggle('collapsed', collapsed);
+    closeBtn.textContent = collapsed ? '+' : '–';
+    closeBtn.setAttribute('aria-label', collapsed ? 'Expand chat' : 'Minimize chat');
+    closeBtn.setAttribute('aria-expanded', String(!collapsed));
+    try { sessionStorage.setItem('askme-collapsed', collapsed ? '1' : '0'); } catch (e) {}
+  }
+
+  function applyMode() {
+    docked = desktop.matches;
+    root.classList.toggle('docked', docked);
+    if (docked) {
+      root.hidden = false;
+      fab.classList.add('hidden-by-panel');
+      let collapsed = false;
+      try { collapsed = sessionStorage.getItem('askme-collapsed') === '1'; } catch (e) {}
+      setCollapsed(collapsed);
+    } else {
+      root.classList.remove('collapsed');
+      root.hidden = true;
+      fab.classList.remove('hidden-by-panel');
+      closeBtn.textContent = '×';
+      closeBtn.setAttribute('aria-label', 'Close chat');
+      closeBtn.removeAttribute('aria-expanded');
+    }
+  }
+
   function openPanel() {
     root.hidden = false;
     fab.classList.add('hidden-by-panel');
+    if (docked) setCollapsed(false);
     input.focus();
   }
 
   function closePanel() {
+    if (docked) { setCollapsed(true); return; }
     root.hidden = true;
     fab.classList.remove('hidden-by-panel');
   }
@@ -1021,10 +1057,23 @@ function initAskMe() {
   fab.addEventListener('click', openPanel);
   const heroAsk = document.getElementById('hero-ask');
   if (heroAsk) heroAsk.addEventListener('click', openPanel);
-  closeBtn.addEventListener('click', closePanel);
-  window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !root.hidden) closePanel();
+  closeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (docked && root.classList.contains('collapsed')) openPanel();
+    else closePanel();
   });
+  if (head) {
+    head.addEventListener('click', (e) => {
+      if (!docked || e.target.closest('a, button')) return;
+      if (root.classList.contains('collapsed')) openPanel();
+      else closePanel();
+    });
+  }
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !root.hidden && !(docked && root.classList.contains('collapsed'))) closePanel();
+  });
+  desktop.addEventListener('change', applyMode);
+  applyMode();
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
