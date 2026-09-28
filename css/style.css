@@ -307,7 +307,7 @@ body.has-cursor .cursor-dot, body.has-cursor .cursor-ring { opacity: 1; }
   font-size: 11.5px;
   letter-spacing: 0.14em;
   color: var(--text-muted);
-  animation: marquee 72s linear infinite;
+  animation: marquee 108s linear infinite;
 }
 .marquee-track span { white-space: pre; }
 @keyframes marquee {
